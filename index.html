@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Study Abroad Agent</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',system-ui;background:#07070F;color:#F2F2F3;min-height:100vh;overflow-x:hidden}
+:root{
+  --purple:#7C6AF7;--purple-light:#A090FF;--purple-dim:#2A1E5C;
+  --green:#3ECF72;--green-dim:#0D2A1A;
+  --cyan:#00E5FF;--yellow:#FFD600;--orange:#FF9800;--red:#E57373;
+  --card:#161630;--card2:#0F0F22;--border:#252548;--text2:#8888AA;
+  --surface:#1A1A38;
+}
+.screen{display:none;flex-direction:column;min-height:100vh}
+.screen.active{display:flex}
+
+/* Inputs */
+input,select,textarea{
+  background:var(--surface);border:1px solid var(--border);color:#F2F2F3;
+  border-radius:8px;padding:10px 14px;font-size:13.5px;width:100%;
+  outline:none;font-family:'Sora',inherit;transition:border-color .2s
+}
+input:focus,select:focus,textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,106,247,.12)}
+select option{background:var(--card)}
+input::placeholder{color:var(--text2)}
+textarea{resize:vertical;min-height:80px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:11px 22px;border-radius:8px;font-size:13.5px;font-weight:500;
+  cursor:pointer;border:none;transition:all .15s;font-family:'Sora',inherit}
+.btn-primary{background:var(--purple);color:#fff}
+.btn-primary:hover{background:#6A59E5;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;border:1px solid var(--border);color:#F2F2F3}
+.btn-outline:hover{background:var(--surface);border-color:var(--purple)}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{opacity:.9}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+
+/* Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+
+/* XP */
+.xp-bar-wrap{background:var(--border);border-radius:20px;height:7px;overflow:hidden}
+.xp-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:20px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:6px 13px;border-radius:20px;
+  font-size:12px;background:var(--surface);color:var(--text2);cursor:pointer;
+  border:1px solid var(--border);transition:all .15s;user-select:none}
+.chip:hover{border-color:var(--purple);color:var(--purple-light)}
+.chip.active{background:var(--purple-dim);border-color:var(--purple);color:var(--purple-light);font-weight:500}
+
+/* Nav */
+.nav-btn{padding:6px 12px;font-size:12px;color:#AAAACC;cursor:pointer;border:none;
+  background:none;border-radius:6px;transition:all .15s;font-family:'Sora',inherit}
+.nav-btn:hover{color:#fff;background:rgba(124,106,247,.12)}
+.nav-btn.act{color:#fff;background:var(--purple)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--purple);
+  border-radius:10px;padding:12px 18px;font-size:13px;z-index:9999;
+  animation:slideUp .3s ease;display:flex;align-items:center;gap:8px;max-width:320px}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Step dots */
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.step-dot.done{background:var(--green);color:#000}
+.step-dot.active{background:var(--purple);color:#fff}
+.step-dot.lock{background:var(--border);color:var(--text2)}
+
+/* Typing cursor */
+.typing-cursor{display:inline-block;width:2px;height:14px;background:var(--purple-light);
+  animation:blink .7s infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Loan fields */
+.loan-field{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:var(--card2);border-radius:8px;font-size:13px;margin-bottom:6px}
+.loan-field .status{font-size:11px;padding:3px 9px;border-radius:12px}
+.done-pill{background:#1A3A1A;color:var(--green)}
+.filling-pill{background:var(--purple-dim);color:var(--purple-light)}
+.pending-pill{background:var(--border);color:var(--text2)}
+
+/* Chat bubbles */
+.chat-bubble{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;
+  line-height:1.65;margin:4px 0;word-break:break-word;white-space:pre-wrap}
+.chat-user{background:var(--purple);color:#fff;align-self:flex-end;border-radius:12px 12px 4px 12px}
+.chat-ai{background:var(--card);color:#F2F2F3;align-self:flex-start;
+  border-radius:12px 12px 12px 4px;border:1px solid var(--border)}
+
+/* Spinners */
+.anim-spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Form helpers */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11.5px;color:var(--text2);font-weight:500;letter-spacing:.3px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.section-head{font-size:10.5px;color:var(--purple-light);text-transform:uppercase;
+  letter-spacing:1.5px;margin-bottom:10px;margin-top:6px;font-weight:600;
+  padding-bottom:6px;border-bottom:1px solid var(--border)}
+.match-high{color:var(--green)}
+.match-mid{color:var(--purple-light)}
+.match-low{color:var(--orange)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1 — LANDING
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center">
+    <div style="width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#7C6AF7,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:20px;box-shadow:0 0 40px rgba(124,106,247,.3)">🎓</div>
+    <div style="font-size:10px;letter-spacing:3px;color:var(--text2);text-transform:uppercase;margin-bottom:10px;font-family:'JetBrains Mono'">AI Study Abroad Agent</div>
+    <h1 style="font-size:30px;font-weight:300;line-height:1.35;margin-bottom:12px">From Dream to Degree —<br><span style="color:var(--purple-light);font-weight:600">AI Executes It All</span></h1>
+    <p style="color:var(--text2);font-size:13.5px;max-width:380px;line-height:1.75;margin-bottom:32px">Empowering the next generation to cross borders, unlock opportunities, and build futures without limits.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:36px">
+      <div class="card" style="flex:1;min-width:140px;max-width:180px;text-align:center;padding:18px 12px">
+        <div style="font-size:22px;margin-bottom:8px">🤖</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">AI Twin Coach</div>
+        <div style="font-size:11px;color:var(--text2)">Powered by Claude AI</div>
+      </div>
+      <div class="card" style="flex:1;min-width:140px;max-width:180px;text-align:center;padding:18px 12px">
+        <div style="font-size:22px;margin-bottom:8px">🏛</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">University Navigator</div>
+        <div style="font-size:11px;color:var(--text2)">AI-ranked + auto SOP</div>
+      </div>
+      <div class="card" style="flex:1;min-width:140px;max-width:180px;text-align:center;padding:18px 12px">
+        <div style="font-size:22px;margin-bottom:8px">💳</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Loan Auto-Fill</div>
+        <div style="font-size:11px;color:var(--text2)">Qualify, match & submit</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:28px;margin-bottom:32px">
+      <div style="text-align:center"><div style="font-size:20px;font-weight:600;color:var(--cyan)">4M+</div><div style="font-size:11px;color:var(--text2)">Students</div></div>
+      <div style="text-align:center"><div style="font-size:20px;font-weight:600;color:var(--yellow)">25+</div><div style="font-size:11px;color:var(--text2)">Countries</div></div>
+      <div style="text-align:center"><div style="font-size:20px;font-weight:600;color:var(--green)">70%</div><div style="font-size:11px;color:var(--text2)">Drop-off solved</div></div>
+    </div>
+    <button class="btn btn-primary" style="padding:13px 36px;font-size:15px;border-radius:10px" onclick="goTo('screen-onboarding')">Start Your Journey Free →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 2 — ONBOARDING
+═══════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1b — API KEY SETUP
+═══════════════════════════════════════════════════════════ -->
+
+    </div>
+
+    <div style="max-width:400px;width:100%">
+      <div class="card" style="text-align:left;padding:14px 16px">
+        <div style="font-size:11px;color:var(--purple-light);font-weight:600;margin-bottom:8px;letter-spacing:.5px">HOW TO GET YOUR API KEY</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8">
+          1. Go to <span style="color:var(--cyan);font-family:'JetBrains Mono'">console.anthropic.com</span><br>
+          2. Sign in or create a free account<br>
+          3. Click <strong style="color:#F2F2F3">API Keys</strong> → <strong style="color:#F2F2F3">Create Key</strong><br>
+          4. Copy the key starting with <span style="font-family:'JetBrains Mono';color:var(--purple-light)">sk-ant-</span> and paste above
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-onboarding" class="screen">
+  <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-size:12.5px;color:var(--text2)">Setup your AI Twin</div>
+    <div style="font-size:12.5px;color:var(--purple-light);font-family:'JetBrains Mono'" id="step-indicator">Step 1 of 4</div>
+  </div>
+  <div style="display:flex;gap:4px;padding:0 24px 12px;background:var(--card2)">
+    <div id="prog1" style="flex:1;height:3px;border-radius:4px;background:var(--purple);transition:background .3s"></div>
+    <div id="prog2" style="flex:1;height:3px;border-radius:4px;background:var(--border);transition:background .3s"></div>
+    <div id="prog3" style="flex:1;height:3px;border-radius:4px;background:var(--border);transition:background .3s"></div>
+    <div id="prog4" style="flex:1;height:3px;border-radius:4px;background:var(--border);transition:background .3s"></div>
+  </div>
+
+  <div style="flex:1;padding:24px;overflow-y:auto;max-width:520px;width:100%;margin:0 auto">
+
+    <!-- ── STEP 1: ABOUT YOU ── -->
+    <div id="ostep1">
+      <h2 style="font-size:20px;font-weight:400;margin-bottom:5px">Tell us about yourself</h2>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:24px">We'll personalise everything for you</p>
+      <div style="display:flex;flex-direction:column;gap:15px">
+
+        <div class="field">
+          <label>Full Name</label>
+          <input id="s1-name" placeholder="e.g. Priya Sharma" value="Priya Sharma">
+        </div>
+
+        <div class="section-head">📍 Your Location</div>
+
+        <div class="field">
+          <label>Home Country</label>
+          <select id="s1-country" onchange="updateStateOptions(this.value)">
+            <option value="India">🇮🇳 India</option>
+            <option value="Nepal">🇳🇵 Nepal</option>
+            <option value="Bangladesh">🇧🇩 Bangladesh</option>
+            <option value="Sri Lanka">🇱🇰 Sri Lanka</option>
+            <option value="Pakistan">🇵🇰 Pakistan</option>
+            <option value="UAE">🇦🇪 UAE</option>
+            <option value="USA">🇺🇸 USA</option>
+            <option value="UK">🇬🇧 UK</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="Australia">🇦🇺 Australia</option>
+            <option value="Other">🌍 Other</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>State / Province</label>
+            <select id="s1-state"></select>
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input id="s1-city" placeholder="e.g. Pune" value="Pune">
+          </div>
+        </div>
+
+        <div class="section-head">🎓 Education</div>
+
+        <div class="field">
+          <label>Current / Most Recent Degree</label>
+          <select id="s1-degree">
+            <optgroup label="── B.Tech / B.E. ──">
+              <option>B.Tech — Computer Science</option>
+              <option>B.Tech — Information Technology</option>
+              <option>B.Tech — Electronics &amp; Communication</option>
+              <option>B.Tech — Electrical Engineering</option>
+              <option>B.Tech — Mechanical Engineering</option>
+              <option>B.Tech — Civil Engineering</option>
+              <option>B.Tech — Chemical Engineering</option>
+              <option>B.Tech — Biotechnology</option>
+              <option>B.Tech — Other Branch</option>
+              <option>B.E. — Computer Science</option>
+              <option>B.E. — Electronics</option>
+              <option>B.E. — Mechanical</option>
+              <option>B.E. — Civil</option>
+              <option>B.E. — Other Branch</option>
+            </optgroup>
+            <optgroup label="── B.Sc ──">
+              <option>B.Sc — Computer Science</option>
+              <option>B.Sc — Mathematics / Statistics</option>
+              <option>B.Sc — Physics</option>
+              <option>B.Sc — Chemistry</option>
+              <option>B.Sc — Biology / Life Sciences</option>
+              <option>B.Sc — Other</option>
+            </optgroup>
+            <optgroup label="── Other UG ──">
+              <option>BCA — Computer Applications</option>
+              <option>BBA — Business Administration</option>
+              <option>B.Com — Commerce</option>
+              <option>BA — Economics</option>
+              <option>BA — English / Literature</option>
+              <option>BA — Psychology</option>
+              <option>BA — Political Science</option>
+              <option>BA — Other</option>
+              <option>B.Arch — Architecture</option>
+              <option>B.Pharm — Pharmacy</option>
+              <option>B.Des — Design</option>
+              <option>MBBS — Medicine</option>
+              <option>LLB — Law</option>
+              <option>Diploma Engineering</option>
+            </optgroup>
+            <optgroup label="── Postgraduate ──">
+              <option>M.Tech / M.E.</option>
+              <option>M.Sc</option>
+              <option>MCA</option>
+              <option>MBA</option>
+              <option>MA</option>
+              <option>M.Com</option>
+            </optgroup>
+            <optgroup label="── Working Professional ──">
+              <option>Working Professional (UG Degree Holder)</option>
+              <option>Working Professional (PG Degree Holder)</option>
+            </optgroup>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Target Degree Abroad</label>
+          <select id="s1-target">
+            <optgroup label="── MS Engineering &amp; Tech ──">
+              <option>MS Computer Science</option>
+              <option>MS Artificial Intelligence / ML</option>
+              <option>MS Data Science</option>
+              <option>MS Software Engineering</option>
+              <option>MS Information Systems</option>
+              <option>MS Information Technology</option>
+              <option>MS Cybersecurity / Information Security</option>
+              <option>MS Computer Engineering</option>
+              <option>MS Electrical Engineering</option>
+              <option>MS Electronics &amp; Communication</option>
+              <option>MS Mechanical Engineering</option>
+              <option>MS Civil &amp; Structural Engineering</option>
+              <option>MS Chemical Engineering</option>
+              <option>MS Biomedical Engineering</option>
+              <option>MS Robotics &amp; Autonomous Systems</option>
+              <option>MS Human-Computer Interaction (HCI)</option>
+              <option>MS Environmental Engineering</option>
+              <option>MS Industrial Engineering</option>
+            </optgroup>
+            <optgroup label="── MBA / Business ──">
+              <option>MBA — General Management</option>
+              <option>MBA — Finance</option>
+              <option>MBA — Marketing</option>
+              <option>MBA — Business Analytics</option>
+              <option>MBA — Entrepreneurship</option>
+              <option>MBA — Technology Management</option>
+              <option>MBA — Operations &amp; Supply Chain</option>
+              <option>MIM — Master in Management</option>
+              <option>MS Finance / Financial Engineering</option>
+              <option>MS Business Analytics</option>
+              <option>MS Supply Chain Management</option>
+              <option>MS Marketing</option>
+              <option>MS Accounting / Taxation</option>
+            </optgroup>
+            <optgroup label="── MS Sciences ──">
+              <option>MS Statistics / Applied Mathematics</option>
+              <option>MS Bioinformatics</option>
+              <option>MS Biotechnology</option>
+              <option>MS Chemistry</option>
+              <option>MS Physics</option>
+              <option>MS Neuroscience</option>
+            </optgroup>
+            <optgroup label="── Other Masters ──">
+              <option>MPH — Public Health</option>
+              <option>M.Arch — Architecture</option>
+              <option>LLM — Master of Laws</option>
+              <option>MEd — Education</option>
+              <option>MS Economics</option>
+              <option>MFA — Fine Arts &amp; Design</option>
+              <option>MS Psychology / Counseling</option>
+              <option>MS Urban Planning</option>
+            </optgroup>
+            <optgroup label="── PhD ──">
+              <option>PhD — Computer Science / Engineering</option>
+              <option>PhD — Electrical / Electronics Engineering</option>
+              <option>PhD — Business / Management</option>
+              <option>PhD — Sciences (Bio / Chem / Physics)</option>
+              <option>PhD — Other Field</option>
+            </optgroup>
+            <option>Other</option>
+          </select>
+        </div>
+
+      </div>
+    </div><!-- /ostep1 -->
+
+    <!-- ── STEP 2: ACADEMIC PROFILE ── -->
+    <div id="ostep2" style="display:none">
+      <h2 style="font-size:20px;font-weight:400;margin-bottom:5px">Academic profile</h2>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:22px">Helps us match &amp; rank universities accurately</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div class="section-head">📝 Test Scores</div>
+        <div class="field-row">
+          <div class="field"><label>GRE Score (out of 340)</label><input id="s2-gre" type="number" min="260" max="340" placeholder="e.g. 320" value="322"></div>
+          <div class="field"><label>GMAT Score (out of 800)</label><input id="s2-gmat" type="number" min="200" max="800" placeholder="e.g. 720 (if applicable)"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>TOEFL iBT (out of 120)</label><input id="s2-toefl" type="number" min="0" max="120" placeholder="e.g. 105" value="105"></div>
+          <div class="field"><label>IELTS Band (out of 9)</label><input id="s2-ielts" type="number" min="0" max="9" step="0.5" placeholder="e.g. 7.5 (if applicable)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);background:var(--card2);padding:8px 12px;border-radius:6px">
+          ℹ️ Fill GRE or GMAT based on your target program. Fill TOEFL or IELTS — both optional if GRE/GMAT has verbal scores.
+        </div>
+
+        <div class="section-head">🏫 Academic Scores</div>
+        <div class="field-row">
+          <div class="field"><label>10th Grade / CGPA (%)</label><input id="s2-tenth" type="number" min="0" max="100" step="0.1" placeholder="e.g. 92.4" value="91.2"></div>
+          <div class="field"><label>12th Grade / CGPA (%)</label><input id="s2-twelfth" type="number" min="0" max="100" step="0.1" placeholder="e.g. 88.6" value="87.8"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>UG CGPA (out of 10)</label><input id="s2-cgpa" type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.4" value="8.4"></div>
+          <div class="field">
+            <label>Active Backlogs (0 if none)</label>
+            <select id="s2-backlogs">
+              <option value="0" selected>0 — No backlogs</option>
+              <option value="1">1 backlog</option>
+              <option value="2">2 backlogs</option>
+              <option value="3">3 backlogs</option>
+              <option value="4+">4 or more</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Cleared Backlogs (previously had but cleared)</label>
+          <select id="s2-cleared-backlogs">
+            <option value="0" selected>None — Always clear</option>
+            <option value="1-2">1–2 (all cleared)</option>
+            <option value="3-5">3–5 (all cleared)</option>
+            <option value="6+">6+ (all cleared)</option>
+          </select>
+        </div>
+
+        <div class="section-head">💼 Experience &amp; Research</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Work Experience</label>
+            <select id="s2-exp">
+              <option value="0">Fresher (0 years)</option>
+              <option value="1">1 year</option>
+              <option value="2" selected>2 years</option>
+              <option value="3">3 years</option>
+              <option value="4">4 years</option>
+              <option value="5+">5+ years</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Internship Experience</label>
+            <select id="s2-internship">
+              <option value="0">No internship</option>
+              <option value="1-2">1–2 months</option>
+              <option value="3-6" selected>3–6 months</option>
+              <option value="7-12">7–12 months</option>
+              <option value="12+">12+ months</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Research Papers Published</label>
+            <select id="s2-research">
+              <option value="0" selected>0 — None</option>
+              <option value="1">1 paper</option>
+              <option value="2">2 papers</option>
+              <option value="3+">3 or more</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Significant Projects</label>
+            <select id="s2-projects">
+              <option value="0-1">0–1 projects</option>
+              <option value="2-3" selected>2–3 projects</option>
+              <option value="4-5">4–5 projects</option>
+              <option value="6+">6 or more</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Extracurriculars / Achievements</label>
+          <select id="s2-extra">
+            <option value="none">None significant</option>
+            <option value="sports">Sports (district/state level)</option>
+            <option value="hackathon" selected>Hackathon / Coding Contest wins</option>
+            <option value="nss-ncc">NSS / NCC / Social Work</option>
+            <option value="leadership">Student Leadership / Club Head</option>
+            <option value="multiple">Multiple (sports + leadership + projects)</option>
+          </select>
+        </div>
+
+        <div class="section-head">📅 Planning</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Target Intake</label>
+            <select id="s2-intake">
+              <option>Sep 2025</option>
+              <option>Jan 2026</option>
+              <option selected>Sep 2026</option>
+              <option>Jan 2027</option>
+              <option>Sep 2027</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Scholarship Interest</label>
+            <select id="s2-scholarship">
+              <option value="yes-high" selected>Yes — Actively searching</option>
+              <option value="yes-open">Yes — Open to it</option>
+              <option value="no">Not prioritising scholarships</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /ostep2 -->
+
+    <!-- ── STEP 3: GOALS & BUDGET ── -->
+    <div id="ostep3" style="display:none">
+      <h2 style="font-size:20px;font-weight:400;margin-bottom:5px">Goals &amp; budget</h2>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:22px">Tell us where you want to go</p>
+      <div style="display:flex;flex-direction:column;gap:18px">
+
+        <div>
+          <label style="font-size:11.5px;color:var(--text2);font-weight:500;display:block;margin-bottom:8px">Target countries — select all you'd consider</label>
+          <div style="display:flex;flex-wrap:wrap;gap:7px" id="country-chips">
+            <div class="chip active" data-val="USA">🇺🇸 USA</div>
+            <div class="chip" data-val="UK">🇬🇧 UK</div>
+            <div class="chip active" data-val="Canada">🇨🇦 Canada</div>
+            <div class="chip" data-val="Australia">🇦🇺 Australia</div>
+            <div class="chip" data-val="Germany">🇩🇪 Germany</div>
+            <div class="chip" data-val="Netherlands">🇳🇱 Netherlands</div>
+            <div class="chip" data-val="Ireland">🇮🇪 Ireland</div>
+            <div class="chip" data-val="New Zealand">🇳🇿 New Zealand</div>
+            <div class="chip" data-val="Singapore">🇸🇬 Singapore</div>
+            <div class="chip" data-val="Sweden">🇸🇪 Sweden</div>
+            <div class="chip" data-val="France">🇫🇷 France</div>
+            <div class="chip" data-val="Switzerland">🇨🇭 Switzerland</div>
+            <div class="chip" data-val="Italy">🇮🇹 Italy</div>
+            <div class="chip" data-val="Japan">🇯🇵 Japan</div>
+            <div class="chip" data-val="South Korea">🇰🇷 South Korea</div>
+            <div class="chip" data-val="Denmark">🇩🇰 Denmark</div>
+            <div class="chip" data-val="Norway">🇳🇴 Norway</div>
+            <div class="chip" data-val="Austria">🇦🇹 Austria</div>
+            <div class="chip" data-val="Spain">🇪🇸 Spain</div>
+            <div class="chip" data-val="Poland">🇵🇱 Poland</div>
+            <div class="chip" data-val="UAE">🇦🇪 UAE</div>
+            <div class="chip" data-val="Hong Kong">🇭🇰 Hong Kong</div>
+            <div class="chip" data-val="Finland">🇫🇮 Finland</div>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:11.5px;color:var(--text2);font-weight:500;display:block;margin-bottom:8px">Annual budget (tuition + living)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:7px" id="budget-chips">
+            <div class="chip" data-val="10-20L">₹10–20L</div>
+            <div class="chip active" data-val="20-35L">₹20–35L</div>
+            <div class="chip" data-val="35-50L">₹35–50L</div>
+            <div class="chip" data-val="50L+">₹50L+</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Target field of study</label>
+          <select id="s3-field">
+            <option selected>Computer Science / AI / ML</option>
+            <option>Data Science / Analytics</option>
+            <option>Electrical Engineering</option>
+            <option>Mechanical Engineering</option>
+            <option>Civil Engineering</option>
+            <option>Business / MBA</option>
+            <option>Finance / Fintech</option>
+            <option>Biotech / Life Sciences</option>
+            <option>Public Health</option>
+            <option>Architecture / Urban Planning</option>
+            <option>Law / LLM</option>
+            <option>Education</option>
+            <option>Arts / Design / Media</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Post-study work priority</label>
+          <select id="s3-work-pref">
+            <option value="high" selected>Very important — want PR / long-term work rights</option>
+            <option value="medium">Somewhat — 2–3 years work experience then return</option>
+            <option value="low">Not a priority — returning to India after graduation</option>
+          </select>
+        </div>
+
+      </div>
+    </div><!-- /ostep3 -->
+
+    <!-- ── STEP 4: LOAN PROFILE ── -->
+    <div id="ostep4" style="display:none">
+      <h2 style="font-size:20px;font-weight:400;margin-bottom:5px">Loan profile</h2>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:22px">We'll find the best financing for you</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div class="field">
+          <label>Loan amount needed</label>
+          <select id="s4-loan">
+            <option>₹5L – ₹10L</option>
+            <option selected>₹10L – ₹20L</option>
+            <option>₹20L – ₹40L</option>
+            <option>₹40L+</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Co-applicant available?</label>
+          <select id="s4-co">
+            <option selected>Yes — Parent</option>
+            <option>Yes — Spouse</option>
+            <option>Yes — Sibling / Relative</option>
+            <option>No co-applicant</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:11.5px;color:var(--text2);font-weight:500;display:block;margin-bottom:8px">Property / collateral available?</label>
+          <div style="display:flex;gap:10px">
+            <div class="chip active" id="col-yes" onclick="selectCollateral(true)">✓ Yes</div>
+            <div class="chip" id="col-no" onclick="selectCollateral(false)">✗ No</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Annual family income</label>
+          <select id="s4-income">
+            <option>₹3L – ₹6L</option>
+            <option>₹6L – ₹12L</option>
+            <option selected>₹12L – ₹25L</option>
+            <option>₹25L+</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Any existing loans or EMIs?</label>
+          <select id="s4-existing">
+            <option value="none" selected>No existing loans</option>
+            <option value="home">Yes — Home loan</option>
+            <option value="vehicle">Yes — Vehicle loan</option>
+            <option value="personal">Yes — Personal loan</option>
+            <option value="multiple">Yes — Multiple loans</option>
+          </select>
+        </div>
+
+      </div>
+    </div><!-- /ostep4 -->
+
+    <!-- ── STEP 5: ACTIVATION ── -->
+    <div id="ostep5" style="display:none;text-align:center;padding:20px 0">
+      <div id="activation-steps">
+        <div id="act1" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card2);border-radius:10px;margin-bottom:8px">
+          <div class="anim-spin" style="font-size:18px">⚙</div>
+          <span style="font-size:13.5px;color:var(--text2)">Analyzing your profile...</span>
+        </div>
+        <div id="act2" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card2);border-radius:10px;margin-bottom:8px;opacity:.35">
+          <div style="font-size:18px">🏛</div>
+          <span style="font-size:13.5px;color:var(--text2)">Matching universities globally...</span>
+        </div>
+        <div id="act3" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card2);border-radius:10px;margin-bottom:8px;opacity:.35">
+          <div style="font-size:18px">💳</div>
+          <span style="font-size:13.5px;color:var(--text2)">Calculating loan eligibility...</span>
+        </div>
+        <div id="act4" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card2);border-radius:10px;opacity:.35">
+          <div style="font-size:18px">🤖</div>
+          <span style="font-size:13.5px;color:var(--text2)">Activating your AI Twin...</span>
+        </div>
+      </div>
+      <div id="activation-done" style="display:none">
+        <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 0 40px rgba(124,106,247,.35)">🤖</div>
+        <h2 style="font-size:22px;font-weight:400;margin-bottom:8px" id="twin-greeting">Welcome, Priya!</h2>
+        <p style="color:var(--text2);font-size:13.5px;margin-bottom:20px">Based on your profile, you have <span style="color:var(--green);font-weight:600">12 strong university matches</span></p>
+        <div style="background:var(--card2);border-radius:10px;padding:14px;text-align:left;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--text2)">Level 1 — Explorer</span>
+            <span style="font-size:12px;color:var(--yellow)">+100 XP earned 🎉</span>
+          </div>
+          <div class="xp-bar-wrap"><div class="xp-bar" style="width:20%"></div></div>
+          <div style="font-size:11px;color:var(--text2);margin-top:5px">100 / 500 XP to Level 2</div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:13px" onclick="goTo('screen-dashboard')">Unlock your roadmap →</button>
+      </div>
+    </div><!-- /ostep5 -->
+
+  </div><!-- /scroll container -->
+
+  <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;max-width:520px;width:100%;margin:0 auto">
+    <button id="btn-back" class="btn btn-outline" style="display:none;padding:10px 20px" onclick="onboardBack()">← Back</button>
+    <div></div>
+    <button id="btn-next" class="btn btn-primary" style="padding:10px 26px" onclick="onboardNext()">Continue →</button>
+  </div>
+</div><!-- /screen-onboarding -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 3 — DASHBOARD
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-size:14px;font-weight:600">🎓 AI Study Abroad</div>
+    <div style="display:flex;gap:4px">
+      <button class="nav-btn act" onclick="goTo('screen-dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="goTo('screen-universities')">Universities</button>
+      <button class="nav-btn" onclick="goTo('screen-loans')">Loans</button>
+      <button class="nav-btn" onclick="goTo('screen-visa')">Visa</button>
+      <button class="nav-btn" onclick="goTo('screen-chat')">AI Chat</button>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:20px;max-width:640px;margin:0 auto;width:100%">
+    <!-- Profile bar -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">👤</div>
+        <div>
+          <div style="font-size:15px;font-weight:500">Hey, <span id="dash-name">Priya</span> 👋</div>
+          <div style="font-size:11.5px;color:var(--text2)">🔥 3-day streak · Last active today</div>
+        </div>
+        <div style="margin-left:auto">
+          <div class="badge" style="background:var(--purple-dim);color:var(--purple-light)">Level 1 — Explorer</div>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-bottom:5px">
+          <span>XP Progress</span><span id="xp-display">100 / 500 XP</span>
+        </div>
+        <div class="xp-bar-wrap"><div class="xp-bar" id="dash-xp-bar" style="width:20%"></div></div>
+      </div>
+    </div>
+
+    <!-- AI Twin nudge -->
+    <div class="card" style="margin-bottom:16px;border-left:3px solid var(--purple)">
+      <div style="font-size:10.5px;color:var(--purple-light);margin-bottom:6px;font-weight:600;letter-spacing:.5px">🤖 YOUR AI TWIN SAYS</div>
+      <div style="font-size:13.5px;line-height:1.65" id="twin-dashboard-msg">You haven't started your SOP for <strong>University of Illinois</strong> yet. Your deadline is Dec 15. Want me to auto-draft it now?</div>
+      <button onclick="goTo('screen-universities')" class="btn btn-primary" style="margin-top:10px;padding:8px 16px;font-size:12px">Auto-Draft SOP →</button>
+    </div>
+
+    <!-- Journey steps -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:13.5px;font-weight:600;margin-bottom:12px">Your Journey</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border-radius:10px">
+          <div class="step-dot done">✓</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Profile Setup</div><div style="font-size:11px;color:var(--text2)">AI Twin activated</div></div>
+          <div class="badge" style="background:#1A3A1A;color:var(--green)">+100 XP</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border-radius:10px">
+          <div class="step-dot done">✓</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">University Shortlist</div><div style="font-size:11px;color:var(--text2)">12+ universities matched</div></div>
+          <div class="badge" style="background:#1A3A1A;color:var(--green)">+50 XP</div>
+        </div>
+        <div onclick="goTo('screen-universities')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border-radius:10px;border:1px solid var(--purple);cursor:pointer">
+          <div class="step-dot active">3</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">SOP Drafting</div><div style="font-size:11px;color:var(--text2)" id="sop-progress-text">0 of 3 SOPs generated</div></div>
+          <div style="font-size:12px;color:var(--purple-light)">Start →</div>
+        </div>
+        <div id="loan-step" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border-radius:10px;opacity:.5">
+          <div class="step-dot lock">4</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Loan Application</div><div style="font-size:11px;color:var(--text2)">Complete SOP first</div></div>
+          <div style="font-size:14px">🔒</div>
+        </div>
+        <div id="visa-step" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border-radius:10px;opacity:.5">
+          <div class="step-dot lock" id="visa-dot">5</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Visa Prep</div><div style="font-size:11px;color:var(--text2)" id="visa-sub">Unlocks after loan</div></div>
+          <div style="font-size:14px" id="visa-lock">🔒</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="card" style="text-align:center;cursor:pointer" onclick="goTo('screen-universities')">
+        <div style="font-size:24px;font-weight:600;color:var(--cyan)">12</div>
+        <div style="font-size:11px;color:var(--text2)">Universities matched</div>
+      </div>
+      <div class="card" style="text-align:center;cursor:pointer" onclick="goTo('screen-loans')">
+        <div style="font-size:24px;font-weight:600;color:var(--green)">₹28L</div>
+        <div style="font-size:11px;color:var(--text2)">Loan eligible</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /screen-dashboard -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 4 — UNIVERSITIES
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-universities" class="screen">
+  <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px">
+    <button onclick="goTo('screen-dashboard')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:0;line-height:1">←</button>
+    <div style="font-size:14px;font-weight:600;flex:1">University Navigator</div>
+    <div id="uni-match-badge" style="font-size:11.5px;color:var(--purple-light);background:var(--purple-dim);padding:4px 10px;border-radius:12px">loading...</div>
+  </div>
+  <div style="padding:13px 20px;border-bottom:1px solid var(--border)">
+    <input placeholder="🔍  Search universities..." style="margin-bottom:10px" id="uni-search" oninput="filterUnis()">
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="filter-chips">
+      <div class="chip active" onclick="toggleFilter(this,'All')">All</div>
+      <div class="chip" onclick="toggleFilter(this,'USA')">🇺🇸 USA</div>
+      <div class="chip" onclick="toggleFilter(this,'Canada')">🇨🇦 Canada</div>
+      <div class="chip" onclick="toggleFilter(this,'UK')">🇬🇧 UK</div>
+      <div class="chip" onclick="toggleFilter(this,'Australia')">🇦🇺 Australia</div>
+      <div class="chip" onclick="toggleFilter(this,'Germany')">🇩🇪 Germany</div>
+      <div class="chip" onclick="toggleFilter(this,'Netherlands')">🇳🇱 NL</div>
+      <div class="chip" onclick="toggleFilter(this,'Ireland')">🇮🇪 Ireland</div>
+      <div class="chip" onclick="toggleFilter(this,'Singapore')">🇸🇬 SG</div>
+      <div class="chip" onclick="toggleFilter(this,'Sweden')">🇸🇪 Sweden</div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px 20px;max-width:680px;width:100%;margin:0 auto" id="uni-list"></div>
+
+  <!-- SOP Modal -->
+  <div id="sop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;overflow-y:auto">
+    <div style="background:#07070F;min-height:100vh;padding:20px">
+      <div style="max-width:620px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <button onclick="closeSOPModal()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;line-height:1">←</button>
+          <div style="font-size:14.5px;font-weight:600" id="sop-title">Auto-Draft SOP</div>
+          <div style="margin-left:auto;font-size:11px;color:var(--text2)" id="sop-gen-info"></div>
+        </div>
+
+        <!-- Generating state -->
+        <div id="sop-generating" style="text-align:center;padding:48px 0">
+          <div class="anim-spin" style="font-size:36px;display:block;margin-bottom:18px">⚙</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:8px">Generating your personalised SOP...</div>
+          <div style="font-size:13px;color:var(--text2)" id="sop-gen-subtitle">Analysing your profile &amp; university requirements</div>
+          <div style="margin-top:16px;font-size:11.5px;color:var(--purple-light)">✨ Powered by Claude AI</div>
+        </div>
+
+        <!-- SOP content (shown after generation) -->
+        <div id="sop-content" style="display:none">
+          <div style="background:var(--card2);border-radius:10px;padding:18px;margin-bottom:14px;line-height:1.85;font-size:13px;white-space:pre-wrap;max-height:65vh;overflow-y:auto;border:1px solid var(--border)" id="sop-text"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+            <button onclick="copySOP()" class="btn btn-outline" style="flex:1;min-width:120px;padding:10px;font-size:13px">📋 Copy SOP</button>
+            <button onclick="downloadSOP()" class="btn btn-outline" style="flex:1;min-width:120px;padding:10px;font-size:13px">⬇ Download .txt</button>
+            <button onclick="regenerateSOP()" class="btn btn-primary" style="flex:1;min-width:120px;padding:10px;font-size:13px">Regenerate ↺</button>
+          </div>
+          <div style="padding:11px 14px;background:var(--green-dim);border-radius:8px;font-size:13px;color:var(--green);border:1px solid rgba(62,207,114,.2)">🎉 SOP generated &amp; saved! +50 XP earned</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Uni Details Modal -->
+  <div id="uni-details-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:460px;width:100%;position:relative">
+      <button onclick="closeUniDetails()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;line-height:1">×</button>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;padding-right:24px">
+        <div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:3px" id="ud-title"></div>
+          <div style="font-size:12px;color:var(--text2)" id="ud-subtitle"></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px" id="ud-match"></div>
+      </div>
+      <div id="ud-body"></div>
+    </div>
+  </div>
+</div><!-- /screen-universities -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 5 — LOANS
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-loans" class="screen">
+  <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px">
+    <button onclick="goTo('screen-dashboard')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:0;line-height:1">←</button>
+    <div style="font-size:14px;font-weight:600;flex:1">Loan Auto-Fill</div>
+    <button id="btn-view-application" onclick="showLoanSummary()" style="display:none;background:none;border:1px solid var(--green);color:var(--green);font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:'Sora',inherit">📄 View Application</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;max-width:600px;width:100%;margin:0 auto">
+
+    <!-- Eligibility banner -->
+    <div class="card" style="margin-bottom:16px;border:1px solid var(--green);background:#071A0F" id="loan-eligibility-banner">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="font-size:22px">✅</div>
+        <div>
+          <div style="font-size:15px;font-weight:500">You're eligible for up to <span style="color:var(--green)" id="loan-eligible-amt">₹28,00,000</span></div>
+          <div style="font-size:12px;color:var(--text2)">Based on your profile · Instant approval path</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--card2);border-radius:8px;padding:9px 12px;font-size:12px"><span style="color:var(--text2)">Co-applicant</span><br><span style="color:var(--green)" id="loan-co-badge">✓ Parent available</span></div>
+        <div style="background:var(--card2);border-radius:8px;padding:9px 12px;font-size:12px"><span style="color:var(--text2)">University</span><br><span style="color:var(--green)">✓ UIUC accredited</span></div>
+        <div style="background:var(--card2);border-radius:8px;padding:9px 12px;font-size:12px"><span style="color:var(--text2)">Family income</span><br><span style="color:var(--green)" id="loan-income-badge">✓ ₹12L+ verified</span></div>
+        <div style="background:var(--card2);border-radius:8px;padding:9px 12px;font-size:12px"><span style="color:var(--text2)">Collateral</span><br><span style="color:var(--green)">✓ Property available</span></div>
+      </div>
+    </div>
+
+    <!-- Lender cards -->
+    <div style="font-size:13.5px;font-weight:600;margin-bottom:12px" id="lender-cards-title">Best loan matches for you</div>
+    <div id="loan-cards">
+      <div class="card" style="margin-bottom:12px;cursor:pointer;border-color:var(--yellow)" onclick="startLoanFill('HDFC Credila','8.9% p.a.','₹28L')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600">HDFC Credila</div>
+          <div class="badge" style="background:#332800;color:var(--yellow)">🏆 Best Match</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Rate</span><span style="font-weight:600">8.9% p.a.</span></div>
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Max Loan</span><span style="font-weight:600">₹40L</span></div>
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Tenure</span><span style="font-weight:600">15 yrs</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">No collateral required · Tax benefit u/s 80E · Holiday period: Course + 6 months</div>
+        <button onclick="event.stopPropagation();startLoanFill('HDFC Credila','8.9% p.a.','₹28L')" class="btn btn-green" style="width:100%;padding:9px;font-size:13px">Apply Now — Auto-Fill →</button>
+      </div>
+      <div class="card" style="margin-bottom:12px;cursor:pointer" onclick="startLoanFill('SBI Global Ed-Vantage','8.15% p.a.','₹28L')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600">SBI Global Ed-Vantage</div>
+          <div class="badge" style="background:#0D2020;color:var(--cyan)">💰 Lowest Rate</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Rate</span><span style="font-weight:600">8.15% p.a.</span></div>
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Max Loan</span><span style="font-weight:600">₹30L</span></div>
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Tenure</span><span style="font-weight:600">15 yrs</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Government bank · Collateral needed for ₹7.5L+ · Low processing fee 0.35%</div>
+        <button onclick="event.stopPropagation();startLoanFill('SBI Global Ed-Vantage','8.15% p.a.','₹28L')" class="btn btn-outline" style="width:100%;padding:9px;font-size:13px">Apply Now — Auto-Fill →</button>
+      </div>
+      <div class="card" style="margin-bottom:12px;cursor:pointer" onclick="startLoanFill('Avanse Financial','9.5% p.a.','₹28L')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600">Avanse Financial</div>
+          <div class="badge" style="background:#1A0A2A;color:var(--purple-light)">⚡ Fastest Approval</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Rate</span><span style="font-weight:600">9.5% p.a.</span></div>
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Max Loan</span><span style="font-weight:600">₹60L</span></div>
+          <div style="font-size:12px"><span style="color:var(--text2);display:block">Tenure</span><span style="font-weight:600">12 yrs</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">3-day approval · No collateral needed · NBFC — flexible eligibility</div>
+        <button onclick="event.stopPropagation();startLoanFill('Avanse Financial','9.5% p.a.','₹28L')" class="btn btn-outline" style="width:100%;padding:9px;font-size:13px">Apply Now — Auto-Fill →</button>
+      </div>
+    </div>
+
+    <!-- Application form (shown after lender selected) -->
+    <div id="loan-application-form" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <button onclick="backToLenders()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:0">←</button>
+        <div style="font-size:14px;font-weight:600" id="af-lender-title">Application Form</div>
+      </div>
+
+      <div class="section-head">👤 Personal Details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        <div class="field-row">
+          <div class="field"><label>Full Name</label><input id="lf-name" placeholder="As per Aadhaar"></div>
+          <div class="field"><label>Date of Birth</label><input id="lf-dob" type="date"></div>
+        </div>
+        <div class="field"><label>Permanent Address</label><textarea id="lf-address" style="min-height:64px" placeholder="Door No, Street, City, State, PIN"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Aadhaar Number</label><input id="lf-aadhaar" placeholder="XXXX XXXX XXXX" maxlength="14"></div>
+          <div class="field"><label>PAN Number</label><input id="lf-pan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Mobile Number</label><input id="lf-mobile" placeholder="+91 XXXXX XXXXX"></div>
+          <div class="field"><label>Email Address</label><input id="lf-email" type="email" placeholder="you@email.com"></div>
+        </div>
+      </div>
+
+      <div class="section-head">🎓 Academic Details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        <div class="field-row">
+          <div class="field"><label>Current/Last Degree</label><input id="lf-degree" placeholder="B.Tech CS"></div>
+          <div class="field"><label>CGPA / Percentage</label><input id="lf-cgpa" placeholder="8.4 / 84%"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>University / College</label><input id="lf-college" placeholder="e.g. Pune University"></div>
+          <div class="field"><label>Year of Passing</label><input id="lf-passyear" placeholder="2024"></div>
+        </div>
+      </div>
+
+      <div class="section-head">🏛 University & Course Details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        <div class="field"><label>Target University Abroad</label><input id="lf-uni" placeholder="e.g. University of Illinois (UIUC)"></div>
+        <div class="field-row">
+          <div class="field"><label>Program / Course</label><input id="lf-program" placeholder="MS Computer Science"></div>
+          <div class="field"><label>Duration</label><select id="lf-duration"><option>1.5 years</option><option selected>2 years</option><option>3 years</option><option>4 years</option></select></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Intake (Start)</label><input id="lf-intake" placeholder="Sep 2025"></div>
+          <div class="field"><label>Total Course Fee (₹)</label><input id="lf-fee" placeholder="e.g. 56,00,000"></div>
+        </div>
+      </div>
+
+      <div class="section-head">💰 Loan Details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        <div class="field-row">
+          <div class="field"><label>Loan Amount Required (₹)</label><input id="lf-amount" placeholder="e.g. 28,00,000"></div>
+          <div class="field"><label>Preferred Tenure</label><select id="lf-tenure"><option>5 years</option><option>7 years</option><option>10 years</option><option selected>12 years</option><option>15 years</option></select></div>
+        </div>
+        <div class="field">
+          <label>Purpose of Loan</label>
+          <select id="lf-purpose">
+            <option>Tuition Fees + Living Expenses</option>
+            <option>Tuition Fees Only</option>
+            <option>Living Expenses Only</option>
+            <option>Tuition + Travel + Living</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Collateral Available?</label>
+          <select id="lf-collateral">
+            <option value="property">Yes — Residential Property</option>
+            <option value="fd">Yes — Fixed Deposit</option>
+            <option value="none">No Collateral</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-head">👨‍👩‍👧 Co-applicant Details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+        <div class="field-row">
+          <div class="field"><label>Co-applicant Name</label><input id="lf-coname" placeholder="Father / Mother name"></div>
+          <div class="field"><label>Relationship</label><select id="lf-corel"><option>Father</option><option>Mother</option><option>Spouse</option><option>Sibling</option><option>Guardian</option></select></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Annual Income (₹)</label><input id="lf-coincome" placeholder="e.g. 12,00,000"></div>
+          <div class="field"><label>Employment Type</label><select id="lf-coempl"><option>Salaried</option><option>Self-Employed</option><option>Business Owner</option><option>Retired</option></select></div>
+        </div>
+        <div class="field"><label>Co-applicant PAN</label><input id="lf-copan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase"></div>
+      </div>
+
+      <div class="section-head">🏦 Bank Account Details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+        <div class="field-row">
+          <div class="field"><label>Account Holder Name</label><input id="lf-accname" placeholder="Full name"></div>
+          <div class="field"><label>Account Number</label><input id="lf-accno" placeholder="XXXXXXXXXXXXXXXXXX"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>IFSC Code</label><input id="lf-ifsc" placeholder="e.g. HDFC0001234"></div>
+          <div class="field"><label>Bank Name</label><input id="lf-bank" placeholder="e.g. HDFC Bank"></div>
+        </div>
+      </div>
+
+      <button onclick="autoFillForm()" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;margin-bottom:10px">🤖 Auto-Fill with AI Twin</button>
+      <button onclick="reviewAndSubmit()" class="btn btn-green" style="width:100%;padding:12px;font-size:14px;font-weight:600">Review & Submit Application →</button>
+    </div>
+
+    <!-- Auto-fill progress panel -->
+    <div id="autofill-panel" style="display:none">
+      <div style="font-size:13.5px;font-weight:600;margin-bottom:12px" id="af-fill-title">Auto-Filling Application...</div>
+      <div id="af-fields">
+        <div class="loan-field"><span>Personal Details (Name, DOB, Address)</span><span class="status pending-pill" id="af1">Pending</span></div>
+        <div class="loan-field"><span>Academic Information</span><span class="status pending-pill" id="af2">Pending</span></div>
+        <div class="loan-field"><span>University Details</span><span class="status pending-pill" id="af3">Pending</span></div>
+        <div class="loan-field"><span>Course &amp; Duration</span><span class="status pending-pill" id="af4">Pending</span></div>
+        <div class="loan-field"><span>Co-applicant Info</span><span class="status pending-pill" id="af5">Pending</span></div>
+        <div class="loan-field"><span>Bank Account Details</span><span class="status pending-pill" id="af6">Pending</span></div>
+      </div>
+      <div id="af-submit" style="display:none">
+        <div style="padding:12px 16px;background:#071A0F;border-radius:8px;margin-bottom:12px;font-size:13px;color:var(--green);border:1px solid rgba(62,207,114,.2)">🎉 All fields auto-filled from your profile! Review below.</div>
+        <button onclick="showFilledForm()" class="btn btn-outline" style="width:100%;padding:11px;font-size:13px;margin-bottom:8px">👁 View Filled Application</button>
+        <button onclick="submitLoan()" class="btn btn-green" style="width:100%;padding:12px;font-size:14px;font-weight:600">Submit Application →</button>
+      </div>
+    </div>
+
+    <!-- Application summary / view panel -->
+    <div id="loan-summary-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <button onclick="hideLoanSummary()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:0">←</button>
+        <div style="font-size:14px;font-weight:600">📄 Submitted Application</div>
+        <div class="badge" style="margin-left:auto;background:#1A3A1A;color:var(--green)">✅ Submitted</div>
+      </div>
+      <div id="loan-summary-content" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button onclick="goTo('screen-visa')" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;margin-top:16px">Continue to Visa Prep →</button>
+    </div>
+
+  </div>
+</div><!-- /screen-loans -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 6 — VISA PREP
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-visa" class="screen">
+  <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px">
+    <button onclick="goTo('screen-dashboard')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:0;line-height:1">←</button>
+    <div style="font-size:14px;font-weight:600;flex:1">🛂 Visa Preparation</div>
+    <div class="badge" style="background:var(--purple-dim);color:var(--purple-light)" id="visa-country-badge">F-1 USA</div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;max-width:640px;width:100%;margin:0 auto">
+
+    <!-- AI Tip -->
+    <div class="card" style="margin-bottom:18px;border-left:3px solid var(--cyan)">
+      <div style="font-size:10.5px;color:var(--cyan);margin-bottom:6px;font-weight:600;letter-spacing:.5px">🤖 AI TWIN VISA TIP</div>
+      <div style="font-size:13px;line-height:1.7" id="visa-ai-tip">For USA (F-1), start your DS-160 form as early as possible — the embassy interview slots fill up fast, especially in India. Aim to apply 3–4 months before your program starts.</div>
+    </div>
+
+    <!-- Visa type selector -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Select your visa type</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="visa-type-chips">
+      <div class="chip active" onclick="selectVisaType(this,'F-1 USA','🇺🇸')">🇺🇸 F-1 USA</div>
+      <div class="chip" onclick="selectVisaType(this,'Study Permit Canada','🇨🇦')">🇨🇦 Canada</div>
+      <div class="chip" onclick="selectVisaType(this,'Tier-4 UK','🇬🇧')">🇬🇧 UK Tier-4</div>
+      <div class="chip" onclick="selectVisaType(this,'Student Visa Australia','🇦🇺')">🇦🇺 Australia</div>
+      <div class="chip" onclick="selectVisaType(this,'German Student Visa','🇩🇪')">🇩🇪 Germany</div>
+    </div>
+
+    <!-- Checklist -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px">📋 Visa Document Checklist</div>
+    <div id="visa-checklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+
+    <!-- Timeline -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px">⏱ Application Timeline</div>
+    <div id="visa-timeline" style="display:flex;flex-direction:column;gap:0;margin-bottom:20px"></div>
+
+    <!-- Key tips -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px">💡 Key Tips</div>
+    <div id="visa-tips" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px"></div>
+
+    <button onclick="goTo('screen-chat')" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px">Ask AI Twin about Visa →</button>
+  </div>
+</div><!-- /screen-visa -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 7 — AI CHAT (AI Twin)
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-chat" class="screen">
+  <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px">
+    <button onclick="goTo('screen-dashboard')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:0;line-height:1">←</button>
+    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🤖</div>
+    <div>
+      <div style="font-size:13.5px;font-weight:600">AI Twin</div>
+      <div style="font-size:11px;color:var(--green)">● Online — Powered by Claude AI</div>
+    </div>
+    <div style="margin-left:auto">
+      <button onclick="clearChat()" style="background:none;border:1px solid var(--border);color:var(--text2);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Sora',inherit">Clear</button>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;max-width:640px;width:100%;margin:0 auto" id="chat-messages">
+    <div class="chat-bubble chat-ai" id="chat-greeting">Hi! I'm your AI Twin. Tell me what you'd like help with today — universities, SOP, loans, visa, or anything else about studying abroad!</div>
+  </div>
+
+  <div style="padding:10px 20px 14px;border-top:1px solid var(--border);max-width:640px;width:100%;margin:0 auto">
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="chip" onclick="sendQuick('What are my best university options?')">🏛 Best universities?</button>
+      <button class="chip" onclick="sendQuick('Help me write a strong SOP')">📝 SOP help</button>
+      <button class="chip" onclick="sendQuick('Which loan should I apply for?')">💳 Loan advice</button>
+      <button class="chip" onclick="sendQuick('Explain the F-1 visa process for USA')">🛂 Visa guide</button>
+      <button class="chip" onclick="sendQuick('What scholarships am I eligible for?')">🎓 Scholarships</button>
+      <button class="chip" onclick="sendQuick('Compare USA vs Canada for my profile')">⚖️ USA vs Canada</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="chat-input" placeholder="Ask your AI Twin anything..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
+      <button id="chat-send-btn" onclick="sendChat()" class="btn btn-primary" style="padding:10px 16px;font-size:13.5px;flex-shrink:0">Send</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--text2);margin-top:6px;text-align:center">Powered by Claude AI · Your profile context is always included</div>
+  </div>
+</div><!-- /screen-chat -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════ -->
+<script>
+// ── State ──────────────────────────────────────────────────────
+var currentXP = 100;
+var studentName = 'Explorer';
+var onboardStep = 1;
+var currentFilter = 'All';
+var currentSOPIdx = -1;
+var sopCount = 0;
+var chatHistory = [];
+var isChatLoading = false;
+var userProfile = {};
+
+// ── Location Data ──────────────────────────────────────────────
+var statesByCountry = {
+  'India': ['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi (NCT)','Chandigarh','Jammu & Kashmir','Ladakh','Puducherry','Andaman & Nicobar','Lakshadweep'],
+  'Nepal': ['Bagmati','Gandaki','Karnali','Lumbini','Madhesh','Province 1','Sudurpashchim'],
+  'Bangladesh': ['Dhaka','Chittagong','Rajshahi','Khulna','Sylhet','Barisal','Rangpur','Mymensingh'],
+  'Sri Lanka': ['Central','Eastern','Northern','North Central','North Western','Sabaragamuwa','Southern','Uva','Western'],
+  'Pakistan': ['Balochistan','Islamabad','Khyber Pakhtunkhwa','Punjab','Sindh'],
+  'UAE': ['Abu Dhabi','Dubai','Sharjah','Ajman','Umm Al Quwain','Ras Al Khaimah','Fujairah'],
+  'USA': ['Alabama','Alaska','Arizona','California','Colorado','Connecticut','Florida','Georgia','Illinois','Indiana','Massachusetts','Michigan','Minnesota','New Jersey','New York','North Carolina','Ohio','Pennsylvania','Texas','Virginia','Washington','Wisconsin'],
+  'UK': ['England','Scotland','Wales','Northern Ireland'],
+  'Canada': ['Alberta','British Columbia','Manitoba','New Brunswick','Nova Scotia','Ontario','Prince Edward Island','Quebec','Saskatchewan','Newfoundland'],
+  'Australia': ['New South Wales','Queensland','South Australia','Tasmania','Victoria','Western Australia','Australian Capital Territory','Northern Territory'],
+  'Other': ['N/A']
+};
+
+function updateStateOptions(countryVal) {
+  var stateSelect = document.getElementById('s1-state');
+  var states = statesByCountry[countryVal] || ['N/A'];
+  stateSelect.innerHTML = states.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+  // Set default for India
+  if (countryVal === 'India') {
+    stateSelect.value = 'Maharashtra';
+  }
+}
+
+// ── University Data ────────────────────────────────────────────
+var universities = [
+  // USA
+  {name:'University of Illinois (UIUC)',country:'USA',flag:'🇺🇸',program:'MS Computer Science',rank:13,fee:'₹28L/yr',match:92,gre:315,note:'Top research in distributed systems & AI'},
+  {name:'Purdue University',country:'USA',flag:'🇺🇸',program:'MS Computer Science',rank:22,fee:'₹25L/yr',match:88,gre:310,note:'Strong STEM OPT + industry connections'},
+  {name:'Arizona State University',country:'USA',flag:'🇺🇸',program:'MS Computer Science',rank:55,fee:'₹22L/yr',match:85,gre:305,note:'Rolling admissions · High acceptance'},
+  {name:'Northeastern University',country:'USA',flag:'🇺🇸',program:'MS Computer Science',rank:49,fee:'₹30L/yr',match:82,gre:312,note:"Industry co-op program — world's best"},
+  {name:'Stevens Institute of Technology',country:'USA',flag:'🇺🇸',program:'MS Computer Science',rank:68,fee:'₹27L/yr',match:79,gre:308,note:'NYC proximity · Strong fintech focus'},
+  {name:'University of Texas Dallas',country:'USA',flag:'🇺🇸',program:'MS Computer Science',rank:61,fee:'₹20L/yr',match:83,gre:308,note:'No-TOEFL waiver option · Affordable'},
+  // Canada
+  {name:'University of Waterloo',country:'Canada',flag:'🇨🇦',program:'MS Computer Science',rank:31,fee:'₹20L/yr',match:86,gre:315,note:'Silicon Valley of the North · Co-op'},
+  {name:'University of Toronto',country:'Canada',flag:'🇨🇦',program:'MS Computer Science',rank:18,fee:'₹26L/yr',match:80,gre:315,note:'Top global ranking · Strong AI research'},
+  {name:'York University',country:'Canada',flag:'🇨🇦',program:'MS Computer Science',rank:72,fee:'₹16L/yr',match:80,gre:300,note:'Good PR pathway · Affordable'},
+  {name:'University of Calgary',country:'Canada',flag:'🇨🇦',program:'MS Computer Science',rank:68,fee:'₹18L/yr',match:78,gre:305,note:'Thriving tech scene in Calgary'},
+  // UK
+  {name:'University of Warwick',country:'UK',flag:'🇬🇧',program:'MSc Computer Science',rank:62,fee:'₹32L/yr',match:76,gre:0,note:'Top Russell Group · 2yr PSW visa'},
+  {name:'University of Glasgow',country:'UK',flag:'🇬🇧',program:'MSc Data Science',rank:92,fee:'₹26L/yr',match:74,gre:0,note:'Strong data science faculty · Scotland'},
+  {name:'University of Edinburgh',country:'UK',flag:'🇬🇧',program:'MSc Artificial Intelligence',rank:27,fee:'₹36L/yr',match:72,gre:0,note:'World-class AI research · 1-year MSc'},
+  // Australia
+  {name:'RMIT University',country:'Australia',flag:'🇦🇺',program:'MS Computer Science',rank:188,fee:'₹20L/yr',match:81,gre:0,note:'Industry-connected · Melbourne'},
+  {name:'Deakin University',country:'Australia',flag:'🇦🇺',program:'MS Data Science',rank:265,fee:'₹18L/yr',match:77,gre:0,note:'Flexible online + campus options'},
+  {name:'University of Melbourne',country:'Australia',flag:'🇦🇺',program:'MS Computer Science',rank:33,fee:'₹30L/yr',match:75,gre:0,note:'Top-ranked · Strong research culture'},
+  // Germany
+  {name:'TU Munich (TUM)',country:'Germany',flag:'🇩🇪',program:'MS Computer Science',rank:37,fee:'₹2L/yr',match:82,gre:0,note:'Near-zero tuition · World top 50'},
+  {name:'RWTH Aachen University',country:'Germany',flag:'🇩🇪',program:'MS Computer Science',rank:106,fee:'₹1L/yr',match:78,gre:0,note:'Engineering powerhouse · Semiconductor hub'},
+  // Netherlands
+  {name:'TU Delft',country:'Netherlands',flag:'🇳🇱',program:'MS Computer Science',rank:57,fee:'₹18L/yr',match:80,gre:0,note:'Top tech uni in Europe · 18-month ORI'},
+  {name:'University of Amsterdam',country:'Netherlands',flag:'🇳🇱',program:'MS Artificial Intelligence',rank:55,fee:'₹16L/yr',match:77,gre:0,note:'Top AI program in Europe'},
+  // Ireland
+  {name:'Trinity College Dublin',country:'Ireland',flag:'🇮🇪',program:'MSc Computer Science',rank:81,fee:'₹22L/yr',match:79,gre:0,note:'EU tech hub · Google/Meta nearby'},
+  {name:'University College Dublin',country:'Ireland',flag:'🇮🇪',program:'MSc Data Analytics',rank:148,fee:'₹20L/yr',match:76,gre:0,note:'Strong Irish industry connections'},
+  // Singapore
+  {name:'NUS (Natl. Univ. of Singapore)',country:'Singapore',flag:'🇸🇬',program:'MS Computer Science',rank:8,fee:'₹25L/yr',match:74,gre:315,note:'#1 in Asia · Gateway to SE Asia'},
+  // Sweden
+  {name:'KTH Royal Institute of Technology',country:'Sweden',flag:'🇸🇪',program:'MS Computer Science',rank:98,fee:'₹5L/yr',match:76,gre:0,note:'Low tuition · Strong Scandinavian tech scene'},
+];
+
+function getMatchColor(m){ return m>=88?'var(--green)':m>=75?'var(--purple-light)':'var(--orange)'; }
+function getMatchLabel(m){ return m>=88?'Strong Match':m>=75?'Good Match':'Possible'; }
+
+function renderUnis() {
+  var search = (document.getElementById('uni-search')||{}).value || '';
+  search = search.toLowerCase();
+  var list = document.getElementById('uni-list');
+  var filtered = universities.filter(function(u) {
+    var matchFilter = currentFilter === 'All' || u.country === currentFilter;
+    var matchSearch = !search || u.name.toLowerCase().includes(search) || u.country.toLowerCase().includes(search) || u.program.toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+  var badge = document.getElementById('uni-match-badge');
+  if (badge) badge.textContent = filtered.length + ' matches';
+  if (!filtered.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">No universities found for this filter.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(function(u) {
+    var idx = universities.indexOf(u);
+    var mc = getMatchColor(u.match);
+    return '<div class="card" style="margin-bottom:12px;transition:border-color .2s" onmouseover="this.style.borderColor=\'var(--purple)\'" onmouseout="this.style.borderColor=\'var(--border)\'">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13.5px;font-weight:600;margin-bottom:2px">' + u.flag + ' ' + u.name + '</div>' +
+          '<div style="font-size:11.5px;color:var(--text2)">' + u.program + ' · Rank #' + u.rank + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;margin-left:12px">' +
+          '<div style="font-size:20px;font-weight:700;color:' + mc + '">' + u.match + '%</div>' +
+          '<div style="font-size:10px;color:' + mc + ';font-weight:500">' + getMatchLabel(u.match) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:11.5px;color:var(--purple-light);background:var(--purple-dim);padding:5px 10px;border-radius:6px;margin-bottom:10px">💡 ' + (u.note||'') + '</div>' +
+      '<div style="display:flex;gap:12px;font-size:12px;color:var(--text2);margin-bottom:12px">' +
+        '<span>💰 ' + u.fee + '</span>' +
+        (u.gre ? '<span>GRE min: ' + u.gre + '</span>' : '<span>✅ No GRE req.</span>') +
+      '</div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<button onclick="openUniDetails(' + idx + ')" style="flex:1;padding:8px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:transparent;color:#F2F2F3;font-size:12px;font-family:\'Sora\',inherit">View Details</button>' +
+        '<button onclick="openSOP(' + idx + ')" style="flex:1;padding:8px;border-radius:6px;cursor:pointer;border:none;background:var(--purple);color:#fff;font-size:12px;font-family:\'Sora\',inherit;font-weight:500">Auto-Draft SOP →</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openUniDetails(uniIdx) {
+  var u = universities[uniIdx];
+  if (!u) return;
+  var modal = document.getElementById('uni-details-modal');
+  document.getElementById('ud-title').textContent = u.flag + ' ' + u.name;
+  document.getElementById('ud-subtitle').textContent = u.program + ' · Global Rank #' + u.rank;
+  var mc = getMatchColor(u.match);
+  document.getElementById('ud-match').innerHTML = '<span style="font-size:28px;font-weight:700;color:' + mc + '">' + u.match + '%</span><br><span style="font-size:11px;color:' + mc + '">' + getMatchLabel(u.match) + '</span>';
+  document.getElementById('ud-body').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">' +
+      '<div style="background:var(--card2);border-radius:8px;padding:10px 13px;font-size:12.5px"><span style="color:var(--text2);display:block;font-size:11px;margin-bottom:3px">💰 Annual Fee</span><strong>' + u.fee + '</strong></div>' +
+      '<div style="background:var(--card2);border-radius:8px;padding:10px 13px;font-size:12.5px"><span style="color:var(--text2);display:block;font-size:11px;margin-bottom:3px">🌍 Country</span><strong>' + u.country + '</strong></div>' +
+      '<div style="background:var(--card2);border-radius:8px;padding:10px 13px;font-size:12.5px"><span style="color:var(--text2);display:block;font-size:11px;margin-bottom:3px">📊 GRE Req.</span><strong>' + (u.gre ? u.gre + '+' : 'Not required') + '</strong></div>' +
+      '<div style="background:var(--card2);border-radius:8px;padding:10px 13px;font-size:12.5px"><span style="color:var(--text2);display:block;font-size:11px;margin-bottom:3px">🏆 World Rank</span><strong>#' + u.rank + '</strong></div>' +
+    '</div>' +
+    '<div style="background:var(--purple-dim);border-radius:8px;padding:11px 14px;font-size:13px;color:var(--purple-light);margin-bottom:14px;border:1px solid rgba(124,106,247,.2)">💡 <strong>AI Insight:</strong> ' + u.note + '</div>' +
+    '<button onclick="closeUniDetails();openSOP(' + uniIdx + ')" class="btn btn-primary" style="width:100%;padding:11px;font-size:13.5px;margin-top:4px">Auto-Draft SOP for this University →</button>';
+  modal.style.display = 'flex';
+}
+function closeUniDetails() {
+  document.getElementById('uni-details-modal').style.display = 'none';
+}
+
+function filterUnis(){ renderUnis(); }
+function toggleFilter(el, val) {
+  currentFilter = val;
+  document.querySelectorAll('#filter-chips .chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  renderUnis();
+}
+
+// ── SOP (Anthropic API powered) ────────────────────────────────
+async function openSOP(uniIdx) {
+  var u = universities[uniIdx];
+  if (!u) return;
+  currentSOPIdx = uniIdx;
+
+  document.getElementById('sop-modal').style.display = 'block';
+  document.getElementById('sop-title').textContent = 'SOP — ' + u.name;
+  document.getElementById('sop-generating').style.display = 'block';
+  document.getElementById('sop-content').style.display = 'none';
+  document.getElementById('sop-text').textContent = '';
+  document.getElementById('sop-gen-info').textContent = '';
+  var subtitle = document.getElementById('sop-gen-subtitle');
+  if (subtitle) subtitle.textContent = 'Personalising for ' + u.name + '...';
+
+  try {
+    var resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: buildSOPPrompt(u) }]
+      })
+    });
+    var data = await resp.json();
+    var sopText = (data.content && data.content[0] && data.content[0].text)
+      ? data.content[0].text
+      : getFallbackSOP(u);
+
+    document.getElementById('sop-generating').style.display = 'none';
+    document.getElementById('sop-content').style.display = 'block';
+    document.getElementById('sop-text').textContent = sopText;
+    document.getElementById('sop-gen-info').textContent = '✨ AI-generated';
+
+  } catch (err) {
+    // Fallback to template
+    document.getElementById('sop-generating').style.display = 'none';
+    document.getElementById('sop-content').style.display = 'block';
+    document.getElementById('sop-text').textContent = getFallbackSOP(u);
+    document.getElementById('sop-gen-info').textContent = '📄 Template';
+  }
+
+  sopCount++;
+  updateSOPProgress();
+  addXP(50, 'SOP Generated');
+}
+
+function buildSOPPrompt(u) {
+  var p = userProfile;
+  var name = p.name || studentName || 'Student';
+  var exp = p.workExp || '0';
+  var expText = exp === '0' ? 'a fresh graduate with no full-time work experience' : exp + ' years of professional experience';
+  return 'Write a compelling, personalized Statement of Purpose (SOP) for ' + name + ' applying to ' + u.program + ' at ' + u.name + ' (globally ranked #' + u.rank + ').\n\n' +
+    'Student Profile:\n' +
+    '- Current Degree: ' + (p.currentDegree || 'B.Tech Computer Science') + '\n' +
+    '- CGPA: ' + (p.cgpa || '8.4') + '/10\n' +
+    '- 10th Grade: ' + (p.tenth || '91') + '%\n' +
+    '- 12th Grade: ' + (p.twelfth || '88') + '%\n' +
+    '- GRE: ' + (p.gre || '322') + (p.gmat ? ' | GMAT: ' + p.gmat : '') + '\n' +
+    '- TOEFL: ' + (p.toefl || '105') + (p.ielts ? ' | IELTS: ' + p.ielts : '') + '\n' +
+    '- Experience: ' + expText + '\n' +
+    '- Internship: ' + (p.internship || '3-6') + ' months\n' +
+    '- Research Papers: ' + (p.research || '0') + '\n' +
+    '- Active Backlogs: ' + (p.backlogs || '0') + '\n' +
+    '- City/State: ' + (p.city || 'Pune') + (p.state ? ', ' + p.state : '') + ', ' + (p.country || 'India') + '\n' +
+    '- Career Goal: Excelling in ' + (p.targetDegree || u.program) + ' and working in cutting-edge technology\n\n' +
+    'Write a 450–520 word SOP with:\n' +
+    '1. Compelling opening (passion and motivation)\n' +
+    '2. Academic background (mention CGPA, key coursework, projects)\n' +
+    '3. Professional/internship experience\n' +
+    '4. Why ' + u.name + ' specifically — mention the program\'s strengths, faculty, labs, or unique aspects\n' +
+    '5. Career goals (short and long term)\n' +
+    '6. Strong closing paragraph\n\n' +
+    'Rules: Write in first person. Make it personal and authentic. Do NOT use clichés like "since childhood" or "passion for technology." Mention specific aspects of ' + u.name + '\'s ' + u.program + ' program. Output ONLY the SOP text with no preamble, titles, or meta commentary.';
+}
+
+function getFallbackSOP(u) {
+  var name = userProfile.name || studentName;
+  var cgpa = userProfile.cgpa || '8.4';
+  var gre = userProfile.gre || '322';
+  var toefl = userProfile.toefl || '105';
+  var exp = userProfile.workExp || '2';
+  return 'Statement of Purpose\n\n' +
+  'I am applying for the ' + u.program + ' program at ' + u.name + ' with a clear vision: to leverage cutting-edge machine learning techniques to solve real-world problems in intelligent systems design.\n\n' +
+  'Currently completing my ' + (userProfile.currentDegree || 'B.Tech in Computer Science') + ' with a CGPA of ' + cgpa + '/10, I have developed a strong foundation in algorithms, data structures, and software engineering. My GRE score of ' + gre + ' and TOEFL of ' + toefl + ' reflect my academic readiness for rigorous graduate study.\n\n' +
+  (exp !== '0' ? 'During my ' + exp + ' year(s) of industry experience, I designed and deployed scalable systems handling millions of daily transactions. This experience sharpened my ability to bridge theoretical knowledge with practical implementation — a skill I intend to deepen through graduate research.\n\n' : 'Through multiple internships and hands-on academic projects, I have built practical experience in full-stack development, machine learning pipelines, and systems design.\n\n') +
+  u.name + "\'s " + u.program + ' program stands out for its emphasis on systems-level thinking, interdisciplinary research, and its faculty\'s groundbreaking work. I am particularly drawn to the program\'s research culture and industry collaboration opportunities.\n\n' +
+  'My career goal is to work at the intersection of research and industry — either joining the research division of a leading technology company or contributing to a deep-tech startup focused on AI infrastructure. The rigorous training and global network that ' + u.name + ' offers will be instrumental in achieving this vision.\n\n' +
+  'I am confident that my academic background, professional experience, and passion for computer science make me a strong candidate for your program. I look forward to contributing to the ' + u.name + ' community.';
+}
+
+function closeSOPModal() {
+  document.getElementById('sop-modal').style.display = 'none';
+}
+
+async function regenerateSOP() {
+  var u = universities[currentSOPIdx];
+  if (!u) return;
+  document.getElementById('sop-content').style.display = 'none';
+  document.getElementById('sop-generating').style.display = 'block';
+  var sub = document.getElementById('sop-gen-subtitle');
+  if (sub) sub.textContent = 'Generating a fresh version...';
+  try {
+    var resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: buildSOPPrompt(u) + '\n\nIMPORTANT: Generate a completely DIFFERENT version with a different opening angle, different examples, and different structure. Do not repeat the previous version.' }]
+      })
+    });
+    var data = await resp.json();
+    var sopText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : getFallbackSOP(u);
+    document.getElementById('sop-generating').style.display = 'none';
+    document.getElementById('sop-content').style.display = 'block';
+    document.getElementById('sop-text').textContent = sopText;
+    addXP(25, 'SOP Regenerated');
+  } catch (err) {
+    document.getElementById('sop-generating').style.display = 'none';
+    document.getElementById('sop-content').style.display = 'block';
+    showToast('⚠️ Could not connect — using current version');
+  }
+}
+
+function copySOP() {
+  var text = document.getElementById('sop-text').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function(){ showToast('📋 SOP copied to clipboard!'); }).catch(function(){ fallbackCopy(text); });
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  document.execCommand('copy'); document.body.removeChild(ta);
+  showToast('📋 SOP copied!');
+}
+function downloadSOP() {
+  var u = universities[currentSOPIdx] || { name: 'university' };
+  var text = document.getElementById('sop-text').textContent;
+  var blob = new Blob([text], { type: 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'SOP_' + u.name.replace(/[^a-z0-9]/gi,'_') + '.txt';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('⬇ SOP downloaded!');
+}
+
+function updateSOPProgress() {
+  var el = document.getElementById('sop-progress-text');
+  if (el) el.textContent = sopCount + ' of 3 SOPs generated';
+  if (sopCount >= 1) {
+    var loanStep = document.getElementById('loan-step');
+    if (loanStep) {
+      loanStep.style.opacity = '1';
+      loanStep.style.cursor = 'pointer';
+      loanStep.style.borderColor = 'var(--green)';
+      loanStep.style.border = '1px solid var(--green)';
+      loanStep.style.borderRadius = '10px';
+      loanStep.onclick = function() { goTo('screen-loans'); };
+      var lockIcon = loanStep.querySelector('div:last-child');
+      if (lockIcon && lockIcon.textContent === '🔒') lockIcon.textContent = '→';
+      var subText = loanStep.querySelector('.step-dot');
+      if (subText) { subText.className = 'step-dot active'; subText.textContent = '4'; }
+      var desc = loanStep.querySelector('div:nth-child(2) div:nth-child(2)');
+      if (desc) desc.textContent = 'Ready to apply!';
+    }
+  }
+  updateTwinDashboardMsg();
+}
+
+// ── Loans ──────────────────────────────────────────────────────
+var currentLender = '';
+var loanSubmitted = false;
+
+function startLoanFill(lender, rate, amount) {
+  currentLender = lender;
+  document.getElementById('loan-cards').style.display = 'none';
+  document.getElementById('lender-cards-title').style.display = 'none';
+  document.getElementById('loan-eligibility-banner').style.display = 'none';
+  document.getElementById('loan-application-form').style.display = 'block';
+  document.getElementById('af-lender-title').textContent = lender + ' — Application Form';
+  // Pre-fill from user profile
+  var p = userProfile;
+  if (p.name) document.getElementById('lf-name').value = p.name;
+  if (p.currentDegree) document.getElementById('lf-degree').value = p.currentDegree;
+  if (p.cgpa) document.getElementById('lf-cgpa').value = p.cgpa + '/10';
+  if (p.intake) document.getElementById('lf-intake').value = p.intake;
+  if (p.coApplicant) document.getElementById('lf-coname').value = p.coApplicant;
+  if (p.income) document.getElementById('lf-coincome').value = '₹' + p.income;
+  if (p.loanAmount) document.getElementById('lf-amount').value = p.loanAmount;
+  document.getElementById('lf-uni').value = 'University of Illinois (UIUC)';
+  document.getElementById('lf-program').value = p.targetDegree || 'MS Computer Science';
+  document.getElementById('lf-fee').value = '₹56,00,000';
+}
+
+function backToLenders() {
+  document.getElementById('loan-application-form').style.display = 'none';
+  document.getElementById('autofill-panel').style.display = 'none';
+  document.getElementById('loan-cards').style.display = 'block';
+  document.getElementById('lender-cards-title').style.display = 'block';
+  document.getElementById('loan-eligibility-banner').style.display = 'block';
+}
+
+function autoFillForm() {
+  document.getElementById('loan-application-form').style.display = 'none';
+  document.getElementById('autofill-panel').style.display = 'block';
+  document.getElementById('af-fill-title').textContent = 'Auto-Filling ' + currentLender + ' Application...';
+  var fields = ['af1','af2','af3','af4','af5','af6'];
+  fields.forEach(function(id) {
+    document.getElementById(id).textContent = 'Pending';
+    document.getElementById(id).className = 'status pending-pill';
+  });
+  document.getElementById('af-submit').style.display = 'none';
+  var idx = 0;
+  function fillNext() {
+    if (idx >= fields.length) { document.getElementById('af-submit').style.display = 'block'; return; }
+    document.getElementById(fields[idx]).textContent = 'Done ✓';
+    document.getElementById(fields[idx]).className = 'status done-pill';
+    if (idx + 1 < fields.length) {
+      document.getElementById(fields[idx+1]).textContent = 'Filling...';
+      document.getElementById(fields[idx+1]).className = 'status filling-pill';
+    }
+    idx++;
+    setTimeout(fillNext, 700);
+  }
+  setTimeout(fillNext, 600);
+}
+
+function reviewAndSubmit() {
+  submitLoan();
+}
+
+function showFilledForm() {
+  document.getElementById('autofill-panel').style.display = 'none';
+  document.getElementById('loan-application-form').style.display = 'block';
+}
+
+function submitLoan() {
+  loanSubmitted = true;
+  document.getElementById('autofill-panel').style.display = 'none';
+  document.getElementById('loan-application-form').style.display = 'none';
+  addXP(100, 'Loan Application Submitted');
+  showToast('🎉 Application submitted to ' + currentLender + '! +100 XP');
+  document.getElementById('btn-view-application').style.display = 'block';
+  // Show success and unlock visa
+  unlockVisa();
+  setTimeout(function(){ goTo('screen-dashboard'); }, 1800);
+}
+
+function showLoanSummary() {
+  document.getElementById('loan-cards').style.display = 'none';
+  document.getElementById('lender-cards-title').style.display = 'none';
+  document.getElementById('loan-eligibility-banner').style.display = 'none';
+  document.getElementById('loan-application-form').style.display = 'none';
+  document.getElementById('autofill-panel').style.display = 'none';
+  var p = userProfile;
+  var rows = [
+    ['Lender', currentLender || 'HDFC Credila'],
+    ['Applicant Name', p.name || 'Student'],
+    ['Degree Applied For', p.targetDegree || 'MS Computer Science'],
+    ['Target University', 'University of Illinois (UIUC)'],
+    ['Loan Amount', p.loanAmount || '₹28,00,000'],
+    ['Co-applicant', p.coApplicant || 'Parent'],
+    ['Annual Income', p.income ? '₹' + p.income : '₹12,00,000'],
+    ['Status', '✅ Submitted — Under Review'],
+  ];
+  document.getElementById('loan-summary-content').innerHTML = rows.map(function(r) {
+    return '<div class="loan-field"><span style="color:var(--text2)">' + r[0] + '</span><span style="font-weight:500">' + r[1] + '</span></div>';
+  }).join('');
+  document.getElementById('loan-summary-panel').style.display = 'block';
+}
+
+function hideLoanSummary() {
+  document.getElementById('loan-summary-panel').style.display = 'none';
+  document.getElementById('loan-cards').style.display = 'block';
+  document.getElementById('lender-cards-title').style.display = 'block';
+  document.getElementById('loan-eligibility-banner').style.display = 'block';
+}
+
+function unlockVisa() {
+  var visaStep = document.getElementById('visa-step');
+  if (visaStep) {
+    visaStep.style.opacity = '1';
+    visaStep.style.cursor = 'pointer';
+    visaStep.style.border = '1px solid var(--cyan)';
+    visaStep.style.borderRadius = '10px';
+    visaStep.onclick = function() { goTo('screen-visa'); };
+    var dot = document.getElementById('visa-dot');
+    if (dot) { dot.className = 'step-dot active'; dot.style.background = 'var(--cyan)'; }
+    var lock = document.getElementById('visa-lock');
+    if (lock) lock.textContent = '→';
+    var sub = document.getElementById('visa-sub');
+    if (sub) sub.textContent = 'Ready — start your application!';
+  }
+}
+
+// ── AI Chat (Anthropic API) ────────────────────────────────────
+function buildSystemPrompt() {
+  var p = userProfile;
+  return 'You are an expert AI Study Abroad advisor and personal coach named "AI Twin." You help students plan and execute their study abroad journey step by step.\n\n' +
+    'STUDENT PROFILE:\n' +
+    '- Name: ' + (p.name || studentName || 'Student') + '\n' +
+    '- Home Country: ' + (p.country || 'India') + ', ' + (p.state || '') + (p.city ? ', ' + p.city : '') + '\n' +
+    '- Current Degree: ' + (p.currentDegree || 'B.Tech Computer Science') + '\n' +
+    '- Target Degree: ' + (p.targetDegree || 'MS Computer Science') + '\n' +
+    '- GRE: ' + (p.gre || '322') + (p.gmat ? ' | GMAT: ' + p.gmat : '') + '\n' +
+    '- TOEFL: ' + (p.toefl || '105') + (p.ielts ? ' | IELTS: ' + p.ielts : '') + '\n' +
+    '- 10th: ' + (p.tenth || 'N/A') + '% | 12th: ' + (p.twelfth || 'N/A') + '%\n' +
+    '- UG CGPA: ' + (p.cgpa || '8.4') + '/10\n' +
+    '- Active Backlogs: ' + (p.backlogs || '0') + '\n' +
+    '- Work Experience: ' + (p.workExp || '0') + ' years\n' +
+    '- Internship: ' + (p.internship || '0') + ' months\n' +
+    '- Research Papers: ' + (p.research || '0') + '\n' +
+    '- Projects: ' + (p.projects || '2-3') + '\n' +
+    '- Target Countries: ' + (p.countries || 'USA, Canada') + '\n' +
+    '- Annual Budget: ' + (p.budget || '₹20-35L') + '\n' +
+    '- Target Intake: ' + (p.intake || 'Sep 2026') + '\n' +
+    '- Loan Amount Needed: ' + (p.loanAmount || '₹10L-₹20L') + '\n' +
+    '- Co-applicant: ' + (p.coApplicant || 'Parent') + '\n\n' +
+    'GUIDELINES:\n' +
+    '- Be friendly, concise (3-5 sentences max unless explaining something complex), and specific.\n' +
+    '- Give personalized advice based on their exact profile above.\n' +
+    '- For universities: recommend specific institutions considering their GRE/CGPA/backlogs. Flag if backlogs may be an issue.\n' +
+    '- For loans: use Indian context — mention HDFC Credila, SBI Global Ed-Vantage, Avanse, Axis Bank. Use ₹/lakhs.\n' +
+    '- For visa: be country-specific (F-1 for USA, Study Permit for Canada, etc.).\n' +
+    '- For scholarships: mention country-specific options (ORC, Vanier for Canada; TA/RA for USA; DAAD for Germany etc.)\n' +
+    '- Always end with one specific actionable next step or question.\n' +
+    '- Use Indian number system (lakh/crore) for money.';
+}
+
+async function sendChat() {
+  if (isChatLoading) return;
+  var input = document.getElementById('chat-input');
+  var msg = (input.value || '').trim();
+  if (!msg) return;
+  input.value = '';
+
+  var msgs = document.getElementById('chat-messages');
+
+  // User bubble
+  var userBubble = document.createElement('div');
+  userBubble.className = 'chat-bubble chat-user';
+  userBubble.textContent = msg;
+  msgs.appendChild(userBubble);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // AI loading bubble
+  var aiBubble = document.createElement('div');
+  aiBubble.className = 'chat-bubble chat-ai';
+  aiBubble.innerHTML = '<span class="anim-spin" style="font-size:14px">⚙</span> <span style="color:var(--text2);font-size:12px"> Thinking...</span>';
+  msgs.appendChild(aiBubble);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  isChatLoading = true;
+  var sendBtn = document.getElementById('chat-send-btn');
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '...'; }
+
+  chatHistory.push({ role: 'user', content: msg });
+
+  try {
+    var resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: chatHistory
+      })
+    });
+    var data = await resp.json();
+    var aiText = '';
+    if (data.content && data.content[0] && data.content[0].text) {
+      aiText = data.content[0].text;
+    } else if (data.error) {
+      aiText = '⚠️ Error: ' + (data.error.message || 'Something went wrong. Please try again.');
+    } else {
+      aiText = '⚠️ Unexpected response from AI. Please try again.';
+    }
+    chatHistory.push({ role: 'assistant', content: aiText });
+
+    // Type into bubble
+    aiBubble.innerHTML = '';
+    await typeIntoBubble(aiBubble, aiText, msgs);
+
+  } catch (err) {
+    aiBubble.innerHTML = '⚠️ Connection issue — please check your internet and try again.';
+    chatHistory.pop();
+  }
+
+  isChatLoading = false;
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send'; }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function typeIntoBubble(el, text, scrollEl) {
+  return new Promise(function(resolve) {
+    el.textContent = '';
+    var chars = text.split('');
+    var i = 0;
+    var interval = setInterval(function() {
+      el.textContent += chars[i] || '';
+      i++;
+      if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+      if (i >= chars.length) { clearInterval(interval); resolve(); }
+    }, 10);
+  });
+}
+
+function sendQuick(msg) {
+  if (isChatLoading) return;
+  document.getElementById('chat-input').value = msg;
+  sendChat();
+}
+
+function clearChat() {
+  chatHistory = [];
+  var msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = '';
+  var name = (userProfile.name||studentName||'').split(' ')[0] || 'Explorer';
+  var greeting = document.createElement('div');
+  greeting.className = 'chat-bubble chat-ai';
+  greeting.id = 'chat-greeting';
+  greeting.textContent = 'Hi ' + name + '! Chat cleared. What would you like to explore today?';
+  msgs.appendChild(greeting);
+}
+
+// ── XP & Toasts ───────────────────────────────────────────────
+function addXP(amount, reason) {
+  currentXP += amount;
+  var pct = Math.min((currentXP / 500) * 100, 100);
+  var bar = document.getElementById('dash-xp-bar');
+  if (bar) bar.style.width = pct + '%';
+  var xpDisp = document.getElementById('xp-display');
+  if (xpDisp) xpDisp.textContent = currentXP + ' / 500 XP';
+  showToast('+' + amount + ' XP — ' + reason + ' 🎉');
+}
+function showToast(msg) {
+  var existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<span style="font-size:15px">⚡</span>' + msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .4s'; }, 2800);
+  setTimeout(function(){ if(t.parentNode) t.remove(); }, 3200);
+}
+
+// ── Onboarding ────────────────────────────────────────────────
+function onboardNext() {
+  if (onboardStep < 4) {
+    document.getElementById('ostep' + onboardStep).style.display = 'none';
+    onboardStep++;
+    document.getElementById('ostep' + onboardStep).style.display = 'block';
+    document.getElementById('step-indicator').textContent = 'Step ' + onboardStep + ' of 4';
+    document.getElementById('btn-back').style.display = 'block';
+    for (var i = 1; i <= 4; i++) {
+      document.getElementById('prog' + i).style.background = i <= onboardStep ? 'var(--purple)' : 'var(--border)';
+    }
+    if (onboardStep === 4) document.getElementById('btn-next').textContent = 'Activate AI Twin →';
+  } else {
+    // Collect profile and activate
+    collectUserProfile();
+    studentName = (userProfile.name || 'Explorer').split(' ')[0];
+    document.getElementById('ostep4').style.display = 'none';
+    document.getElementById('ostep5').style.display = 'block';
+    document.getElementById('btn-next').style.display = 'none';
+    document.getElementById('btn-back').style.display = 'none';
+    document.getElementById('step-indicator').textContent = 'Activating...';
+    runActivation();
+  }
+}
+
+function onboardBack() {
+  if (onboardStep > 1) {
+    document.getElementById('ostep' + onboardStep).style.display = 'none';
+    onboardStep--;
+    document.getElementById('ostep' + onboardStep).style.display = 'block';
+    document.getElementById('step-indicator').textContent = 'Step ' + onboardStep + ' of 4';
+    document.getElementById('btn-next').textContent = 'Continue →';
+    if (onboardStep === 1) document.getElementById('btn-back').style.display = 'none';
+    for (var i = 1; i <= 4; i++) {
+      document.getElementById('prog' + i).style.background = i <= onboardStep ? 'var(--purple)' : 'var(--border)';
+    }
+  }
+}
+
+function runActivation() {
+  var items = [
+    { id:'act1', icon:'✅', label:'Profile analyzed!' },
+    { id:'act2', icon:'✅', label:'Universities matched!' },
+    { id:'act3', icon:'✅', label:'Loan eligibility calculated!' },
+    { id:'act4', icon:'🤖', label:'AI Twin is ready!' },
+  ];
+  items.forEach(function(item, i) {
+    setTimeout(function() {
+      var el = document.getElementById(item.id);
+      if (!el) return;
+      el.style.opacity = '1';
+      var spinner = el.querySelector('.anim-spin');
+      var iconDiv = el.querySelector('div');
+      if (spinner) { spinner.className = ''; spinner.textContent = item.icon; }
+      else if (iconDiv) { iconDiv.textContent = item.icon; }
+      var span = el.querySelector('span');
+      if (span) span.style.color = '#F2F2F3';
+    }, (i + 1) * 1300);
+  });
+  setTimeout(function() {
+    document.getElementById('activation-steps').style.display = 'none';
+    document.getElementById('activation-done').style.display = 'block';
+    var nm = (userProfile.name || 'Explorer').split(' ')[0];
+    var tg = document.getElementById('twin-greeting');
+    if (tg) tg.textContent = 'Welcome, ' + nm + '! 🎉';
+    studentName = nm;
+  }, 7000);
+}
+
+function collectUserProfile() {
+  var countries = [];
+  document.querySelectorAll('#country-chips .chip.active').forEach(function(c){ countries.push(c.dataset.val); });
+  var budgetChip = document.querySelector('#budget-chips .chip.active');
+  userProfile = {
+    name: (document.getElementById('s1-name')||{}).value || 'Student',
+    country: (document.getElementById('s1-country')||{}).value || 'India',
+    state: (document.getElementById('s1-state')||{}).value || '',
+    city: (document.getElementById('s1-city')||{}).value || '',
+    currentDegree: (document.getElementById('s1-degree')||{}).value || '',
+    targetDegree: (document.getElementById('s1-target')||{}).value || '',
+    gre: (document.getElementById('s2-gre')||{}).value || '',
+    gmat: (document.getElementById('s2-gmat')||{}).value || '',
+    toefl: (document.getElementById('s2-toefl')||{}).value || '',
+    ielts: (document.getElementById('s2-ielts')||{}).value || '',
+    tenth: (document.getElementById('s2-tenth')||{}).value || '',
+    twelfth: (document.getElementById('s2-twelfth')||{}).value || '',
+    cgpa: (document.getElementById('s2-cgpa')||{}).value || '',
+    backlogs: (document.getElementById('s2-backlogs')||{}).value || '0',
+    clearedBacklogs: (document.getElementById('s2-cleared-backlogs')||{}).value || '0',
+    workExp: (document.getElementById('s2-exp')||{}).value || '0',
+    internship: (document.getElementById('s2-internship')||{}).value || '0',
+    research: (document.getElementById('s2-research')||{}).value || '0',
+    projects: (document.getElementById('s2-projects')||{}).value || '2-3',
+    intake: (document.getElementById('s2-intake')||{}).value || 'Sep 2026',
+    scholarship: (document.getElementById('s2-scholarship')||{}).value || 'yes-open',
+    countries: countries.join(', ') || 'USA',
+    budget: budgetChip ? '₹' + budgetChip.dataset.val + '/year' : '₹20-35L/year',
+    field: (document.getElementById('s3-field')||{}).value || '',
+    workPref: (document.getElementById('s3-work-pref')||{}).value || '',
+    loanAmount: (document.getElementById('s4-loan')||{}).value || '',
+    coApplicant: (document.getElementById('s4-co')||{}).value || '',
+    income: (document.getElementById('s4-income')||{}).value || '',
+  };
+}
+
+// ── Collateral Chips ──────────────────────────────────────────
+function selectCollateral(val) {
+  document.getElementById('col-yes').className = 'chip' + (val ? ' active' : '');
+  document.getElementById('col-no').className = 'chip' + (!val ? ' active' : '');
+}
+
+// ── Country / Budget Chips ────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Country chips (multi-select)
+  document.querySelectorAll('#country-chips .chip').forEach(function(c) {
+    c.onclick = function(){ this.classList.toggle('active'); };
+  });
+  // Budget chips (single-select)
+  document.querySelectorAll('#budget-chips .chip').forEach(function(c) {
+    c.onclick = function() {
+      document.querySelectorAll('#budget-chips .chip').forEach(function(x){ x.classList.remove('active'); });
+      this.classList.add('active');
+    };
+  });
+  // Initialize state dropdown for default country (India)
+  updateStateOptions('India');
+});
+
+// ── Navigation ────────────────────────────────────────────────
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var target = document.getElementById(screenId);
+  if (target) target.classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (screenId === 'screen-universities') renderUnis();
+  if (screenId === 'screen-dashboard') {
+    var dn = document.getElementById('dash-name');
+    if (dn) dn.textContent = studentName;
+    updateTwinDashboardMsg();
+  }
+  if (screenId === 'screen-chat') updateChatGreeting();
+  if (screenId === 'screen-visa') {
+    // ensure visa content is rendered
+    var activeChip = document.querySelector('#visa-type-chips .chip.active');
+    if (!activeChip) renderVisaContent('F-1 USA','🇺🇸');
+  }
+  if (screenId === 'screen-loans' && loanSubmitted) {
+    // show view application button
+    document.getElementById('btn-view-application').style.display = 'block';
+  }
+}
+
+function updateTwinDashboardMsg() {
+  var el = document.getElementById('twin-dashboard-msg');
+  if (!el) return;
+  var name = (userProfile.name || studentName || '').split(' ')[0];
+  if (loanSubmitted) {
+    el.innerHTML = '🚀 <strong>' + name + '</strong>, your loan application is submitted! Now let\'s get your visa ready — check the Visa Prep section.';
+  } else if (sopCount === 0) {
+    el.innerHTML = 'Hey <strong>' + name + '</strong>! You have 0 SOPs drafted. Your strongest match is University of Illinois (UIUC) at 92% — want me to auto-generate that SOP now?';
+  } else if (sopCount < 3) {
+    el.innerHTML = '✅ Great progress <strong>' + name + '</strong>! ' + sopCount + ' SOP(s) done. Keep going — aim for at least 3 applications. Next: submit your loan application.';
+  } else {
+    el.innerHTML = '🎉 Amazing, <strong>' + name + '</strong>! All SOPs done. Your next step is to submit your loan application with HDFC Credila for the best terms.';
+  }
+}
+
+function updateChatGreeting() {
+  var el = document.getElementById('chat-greeting');
+  if (!el) return;
+  var name = (userProfile.name || studentName || '').split(' ')[0] || 'Explorer';
+  var details = [];
+  if (userProfile.gre) details.push('GRE ' + userProfile.gre);
+  if (userProfile.cgpa) details.push('CGPA ' + userProfile.cgpa + '/10');
+  if (userProfile.targetDegree) details.push(userProfile.targetDegree);
+  if (userProfile.countries) details.push('targeting ' + userProfile.countries);
+  el.textContent = 'Hi ' + name + '! I\'m your AI Twin — powered by Claude AI. ' +
+    (details.length > 0 ? 'I know your full profile: ' + details.join(', ') + '. ' : '') +
+    'Ask me anything about universities, SOPs, loans, visas, or scholarships!';
+}
+
+// ── Visa Prep ─────────────────────────────────────────────────
+var visaData = {
+  'F-1 USA': {
+    tip: 'For USA (F-1), start your DS-160 form early — embassy interview slots fill up fast in India. Apply 3–4 months before your program starts. Show strong home-country ties.',
+    checklist: [
+      ['I-20 from university','Required — issued after admission'],
+      ['DS-160 form completed','Online application form'],
+      ['SEVIS fee payment ($350)','Pay before visa interview'],
+      ['Valid passport (6+ months)','Must be valid for program duration'],
+      ['Visa application fee ($185)','MRV fee — pay online'],
+      ['Interview appointment confirmation','USCIS scheduling letter'],
+      ['Financial documents','Bank statements, loan sanction letter'],
+      ['Admission offer letter','Original + copies'],
+      ['Academic transcripts','10th, 12th, UG marksheets'],
+      ['GRE / TOEFL score cards','Official score reports'],
+      ['Photographs (2×2 inch)','White background, recent'],
+    ],
+    timeline: [
+      ['3–4 months before','Apply for I-20 from university'],
+      ['3 months before','Pay SEVIS fee, fill DS-160'],
+      ['2.5 months before','Book visa interview appointment'],
+      ['2 months before','Gather all documents'],
+      ['Interview day','Attend USCIS/embassy interview'],
+      ['1–3 weeks after','Visa stamped in passport'],
+    ],
+    tips: [
+      '💬 At the interview: Be confident, answer briefly, show you intend to return after studies.',
+      '💰 Show financial proof covering at least the first year of expenses.',
+      '📄 Carry original documents — bring copies too but show originals first.',
+      '🗓 SEVIS fee must be paid at least 3 working days before interview.',
+    ]
+  },
+  'Study Permit Canada': {
+    tip: 'Canada study permits are processed online. Apply as early as possible — processing can take 8–12 weeks. Get a biometrics appointment after submitting.',
+    checklist: [
+      ['Letter of acceptance','From designated learning institution (DLI)'],
+      ['Valid passport','Must cover entire study period'],
+      ['Proof of funds','Bank statements, GIC, or loan letter'],
+      ['Statement of Purpose (SOP)','Why you chose Canada'],
+      ['Biometrics','Required for most applicants'],
+      ['IMM 1294 application form','Completed online or paper'],
+      ['Study permit application fee (CAD 150)','Pay online'],
+      ['Academic transcripts','All educational documents'],
+      ['Language test scores','IELTS / TOEFL'],
+      ['Medical exam (if required)','Designated panel physician'],
+    ],
+    timeline: [
+      ['4–5 months before','Receive acceptance letter'],
+      ['4 months before','Submit study permit application online'],
+      ['3.5 months before','Complete biometrics if requested'],
+      ['8–12 weeks processing','Track status on IRCC portal'],
+      ['After approval','Receive port of entry letter (ePAL)'],
+      ['At border','Get physical permit stamped'],
+    ],
+    tips: [
+      '🏦 GIC (Guaranteed Investment Certificate) with CAD 10,000 strengthens your application.',
+      '📋 Your SOP must clearly explain your study plan and intention to return home.',
+      '⚡ Apply for biometrics immediately after submitting — it can take 1–4 weeks.',
+      '🌐 Use the IRCC online portal for fastest processing.',
+    ]
+  },
+  'Tier-4 UK': {
+    tip: 'UK Student visas (formerly Tier-4) can only be applied 6 months before course start. You need a Confirmation of Acceptance for Studies (CAS) from your university first.',
+    checklist: [
+      ['CAS (Confirmation of Acceptance for Studies)','From your UK university'],
+      ['Valid passport','Must be current'],
+      ['UK visa application fee (£490)','Pay online'],
+      ['Immigration Health Surcharge (IHS)','£776/year — pay online'],
+      ['Financial proof','Show tuition + living costs'],
+      ['IELTS / TOEFL scores','UKVI-approved tests only'],
+      ['Tuberculosis test results','If applying from India'],
+      ['Academic qualifications','Transcripts and certificates'],
+      ['ATAS certificate (if required)','Some STEM subjects need this'],
+      ['Photographs (2 recent)','UK passport photo spec'],
+    ],
+    timeline: [
+      ['After acceptance','Request CAS from university'],
+      ['6 months before start','Earliest you can apply for visa'],
+      ['Apply online','Complete application, pay fees'],
+      ['Within 3 weeks of applying','Book biometrics appointment'],
+      ['3 weeks processing','Typical decision time'],
+      ['After approval','Collect BRP within 10 days of arrival'],
+    ],
+    tips: [
+      '💡 Apply no earlier than 6 months before your course start date.',
+      '🏥 IHS fee must be paid upfront — budget ₹80,000+ for a 2-year course.',
+      '📸 UK has strict photo specs — use a professional service.',
+      '🧪 IELTS must be "UKVI" approved version, not the standard one.',
+    ]
+  },
+  'Student Visa Australia': {
+    tip: 'Australian student visas (subclass 500) are processed online with fast turnaround (2–4 weeks). You must have a Confirmation of Enrolment (CoE) from your institution.',
+    checklist: [
+      ['Confirmation of Enrolment (CoE)','Issued by Australian institution'],
+      ['Valid passport','6 months beyond stay'],
+      ['Visa application fee (AUD 710)','Pay online via ImmiAccount'],
+      ['Genuine Temporary Entrant (GTE) statement','Explain why you chose Australia'],
+      ['Financial evidence','Tuition + AUD 21,041/year living costs'],
+      ['English proficiency (IELTS/PTE)','Institution-specific requirements'],
+      ['Health insurance (OSHC)','Overseas Student Health Cover — mandatory'],
+      ['Academic transcripts','All previous qualifications'],
+      ['Health examination','If requested by immigration'],
+      ['Character documents','Police clearance if required'],
+    ],
+    timeline: [
+      ['After acceptance','Receive CoE from university'],
+      ['Apply online','ImmiAccount — attach all docs'],
+      ['2–4 weeks','Average processing time'],
+      ['Grant of visa','Electronic — stored in passport'],
+      ['Before departure','Purchase OSHC insurance'],
+      ['On arrival','No physical stamp needed — visa is electronic'],
+    ],
+    tips: [
+      '📝 GTE statement is crucial — explain clearly why you want to study in Australia and your intention to return.',
+      '🏥 OSHC (health cover) must be purchased before you apply — it\'s mandatory.',
+      '⚡ Australian student visa has among the fastest processing times globally.',
+      '💼 You can work up to 48 hours per fortnight while studying.',
+    ]
+  },
+  'German Student Visa': {
+    tip: 'Germany requires a blocked account (Sperrkonto) with €11,208 before applying. The visa allows unlimited work hours during semester breaks and 20 hours/week during term.',
+    checklist: [
+      ['University admission letter','Zulassungsbescheid'],
+      ['Blocked account (Sperrkonto) — €11,208','Deutsche Bank, Fintiba, or Expatrio'],
+      ['Proof of health insurance','AOK, TK, or international insurance'],
+      ['Valid passport + copies','Must be valid for stay duration'],
+      ['National visa application form','Filled and signed'],
+      ['Biometric photographs (2)','35×45 mm, white background'],
+      ['Academic certificates','Transcripts, marksheets, degree'],
+      ['Language proof (German B2 / English B2+)','TestDaF or IELTS'],
+      ['Motivational letter','Why Germany, why this program'],
+      ['CV / Resume','Academic and professional'],
+    ],
+    timeline: [
+      ['3 months before','Open blocked account, get health insurance'],
+      ['2.5 months before','Book appointment at German consulate'],
+      ['Appointment day','Submit documents in person'],
+      ['4–8 weeks processing','Wait for visa decision'],
+      ['After approval','Collect visa, book flights'],
+      ['Within 14 days of arrival','Register at city hall (Anmeldung)'],
+    ],
+    tips: [
+      '🏦 Open your blocked account (Fintiba/Expatrio) early — it takes 2–3 weeks to set up.',
+      '🗓 German consulate appointments in India book out fast — schedule 2–3 months in advance.',
+      '💰 Germany has nearly free tuition (€100–500 semester fees) — the blocked account covers living costs.',
+      '📋 Your motivational letter must specifically mention the university and program you are applying to.',
+    ]
+  }
+};
+
+function selectVisaType(el, type, flag) {
+  document.querySelectorAll('#visa-type-chips .chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  renderVisaContent(type, flag);
+}
+
+function renderVisaContent(type, flag) {
+  var d = visaData[type];
+  if (!d) return;
+  document.getElementById('visa-country-badge').textContent = flag + ' ' + type;
+  document.getElementById('visa-ai-tip').textContent = d.tip;
+
+  // Checklist
+  document.getElementById('visa-checklist').innerHTML = d.checklist.map(function(item, i) {
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--card2);border-radius:8px;cursor:pointer" onclick="toggleVisaCheck(this,' + i + ')" id="vc-' + i + '">' +
+      '<div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all .2s" class="vc-dot"></div>' +
+      '<div style="flex:1"><div style="font-size:12.5px;font-weight:500">' + item[0] + '</div><div style="font-size:11px;color:var(--text2);margin-top:2px">' + item[1] + '</div></div>' +
+    '</div>';
+  }).join('');
+
+  // Timeline
+  document.getElementById('visa-timeline').innerHTML = d.timeline.map(function(step, i) {
+    var isLast = i === d.timeline.length - 1;
+    return '<div style="display:flex;gap:12px">' +
+      '<div style="display:flex;flex-direction:column;align-items:center;width:28px">' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:4px"></div>' +
+        (!isLast ? '<div style="width:2px;flex:1;background:var(--border);margin-top:2px;margin-bottom:0;min-height:24px"></div>' : '') +
+      '</div>' +
+      '<div style="padding-bottom:' + (isLast ? '0' : '12') + 'px">' +
+        '<div style="font-size:11px;color:var(--purple-light);font-weight:600;margin-bottom:2px">' + step[0] + '</div>' +
+        '<div style="font-size:12.5px">' + step[1] + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // Tips
+  document.getElementById('visa-tips').innerHTML = d.tips.map(function(tip) {
+    return '<div style="padding:10px 13px;background:var(--card2);border-radius:8px;font-size:12.5px;line-height:1.6;border-left:3px solid var(--yellow)">' + tip + '</div>';
+  }).join('');
+}
+
+function toggleVisaCheck(el, idx) {
+  var dot = el.querySelector('.vc-dot');
+  if (dot.style.background === 'var(--green)') {
+    dot.style.background = '';
+    dot.style.borderColor = 'var(--border)';
+    dot.textContent = '';
+  } else {
+    dot.style.background = 'var(--green)';
+    dot.style.borderColor = 'var(--green)';
+    dot.textContent = '✓';
+    dot.style.color = '#000';
+    dot.style.fontWeight = '700';
+  }
+}
+
+// Init visa screen
+(function initVisa(){
+  if (document.readyState !== 'loading') {
+    renderVisaContent('F-1 USA','🇺🇸');
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){ renderVisaContent('F-1 USA','🇺🇸'); });
+  }
+})();
+// Immediately initialize state dropdown (before DOMContentLoaded fires for inline scripts)
+(function init() {
+  if (document.getElementById('s1-state')) {
+    updateStateOptions('India');
+  }
+})();
+</script>
+</body>
+</html>

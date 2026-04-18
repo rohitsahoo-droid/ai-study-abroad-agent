@@ -1,0 +1,15 @@
+{
+  "name": "ai-study-abroad-agent",
+  "version": "1.0.0",
+  "description": "AI-powered study abroad planning agent built with Claude AI",
+  "main": "api/chat.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["study-abroad", "ai", "claude", "education"],
+  "license": "MIT"
+}
