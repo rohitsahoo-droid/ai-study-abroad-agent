@@ -1281,9 +1281,10 @@ async function openSOP(uniIdx) {
       })
     });
     var data = await resp.json();
-    var sopText = (data.content && data.content[0] && data.content[0].text)
-      ? data.content[0].text
-      : getFallbackSOP(u);
+   var sopText =
+data.candidates?.[0]?.content?.parts?.[0]?.text
+? data.candidates[0].content.parts[0].text
+: getFallbackSOP(u);
 
     document.getElementById('sop-generating').style.display = 'none';
     document.getElementById('sop-content').style.display = 'block';
