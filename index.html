@@ -126,7 +126,7 @@ textarea{resize:vertical;min-height:80px}
       <div class="card" style="flex:1;min-width:140px;max-width:180px;text-align:center;padding:18px 12px">
         <div style="font-size:22px;margin-bottom:8px">🤖</div>
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">AI Twin Coach</div>
-        <div style="font-size:11px;color:var(--text2)">Powered by Claude AI</div>
+        <div style="font-size:11px;color:var(--text2)">Powered by AI</div>
       </div>
       <div class="card" style="flex:1;min-width:140px;max-width:180px;text-align:center;padding:18px 12px">
         <div style="font-size:22px;margin-bottom:8px">🏛</div>
@@ -776,7 +776,7 @@ textarea{resize:vertical;min-height:80px}
           <div class="anim-spin" style="font-size:36px;display:block;margin-bottom:18px">⚙</div>
           <div style="font-size:15px;font-weight:500;margin-bottom:8px">Generating your personalised SOP...</div>
           <div style="font-size:13px;color:var(--text2)" id="sop-gen-subtitle">Analysing your profile &amp; university requirements</div>
-          <div style="margin-top:16px;font-size:11.5px;color:var(--purple-light)">✨ Powered by Claude AI</div>
+          <div style="margin-top:16px;font-size:11.5px;color:var(--purple-light)">✨ Powered by AI</div>
         </div>
 
         <!-- SOP content (shown after generation) -->
@@ -1067,7 +1067,7 @@ textarea{resize:vertical;min-height:80px}
     <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🤖</div>
     <div>
       <div style="font-size:13.5px;font-weight:600">AI Twin</div>
-      <div style="font-size:11px;color:var(--green)">● Online — Powered by Claude AI</div>
+      <div style="font-size:11px;color:var(--green)">● Online — Powered by AI</div>
     </div>
     <div style="margin-left:auto">
       <button onclick="clearChat()" style="background:none;border:1px solid var(--border);color:var(--text2);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Sora',inherit">Clear</button>
@@ -1091,7 +1091,7 @@ textarea{resize:vertical;min-height:80px}
       <input id="chat-input" placeholder="Ask your AI Twin anything..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
       <button id="chat-send-btn" onclick="sendChat()" class="btn btn-primary" style="padding:10px 16px;font-size:13.5px;flex-shrink:0">Send</button>
     </div>
-    <div style="font-size:10.5px;color:var(--text2);margin-top:6px;text-align:center">Powered by Claude AI · Your profile context is always included</div>
+    <div style="font-size:10.5px;color:var(--text2);margin-top:6px;text-align:center">Powered by AI · Your profile context is always included</div>
   </div>
 </div><!-- /screen-chat -->
 
@@ -1269,7 +1269,7 @@ async function openSOP(uniIdx) {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        max_tokens: 1500,
         messages: [{ role: 'user', content: buildSOPPrompt(u) }]
       })
     });
@@ -1297,7 +1297,7 @@ async function openSOP(uniIdx) {
 function buildSOPPrompt(u) {
   var p = userProfile;
   var name = p.name || studentName || 'Student';
-  return 'Write a 450-word SOP for ' + name + ' applying to ' + u.program + ' at ' + u.name + '. Profile: CGPA ' + (p.cgpa||'8.4') + ', GRE ' + (p.gre||'322') + ', TOEFL ' + (p.toefl||'105') + ', ' + (p.workExp||'0') + 'yr exp, ' + (p.internship||'0') + ' months internship. Include: strong opening, academics, experience, why ' + u.name + ' specifically, career goals. First person. No clichés. Output SOP text only.';
+  return 'Write a complete 500-word Statement of Purpose for ' + name + ' applying to ' + u.program + ' at ' + u.name + '. Profile: CGPA ' + (p.cgpa||'8.4') + ', GRE ' + (p.gre||'322') + ', TOEFL ' + (p.toefl||'105') + ', ' + (p.workExp||'0') + 'yr work exp, ' + (p.internship||'0') + ' months internship. Write ALL 5 paragraphs: 1) compelling opening 2) academics & projects 3) work/internship experience 4) why ' + u.name + ' specifically 5) career goals & closing. First person. No clichés. Output the full SOP text only, do not truncate.';
 }
 
 function getFallbackSOP(u) {
@@ -1332,7 +1332,7 @@ async function regenerateSOP() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        max_tokens: 1500,
         messages: [{ role: 'user', content: buildSOPPrompt(u) + '\n\nIMPORTANT: Generate a completely DIFFERENT version with a different opening angle, different examples, and different structure. Do not repeat the previous version.' }]
       })
     });
@@ -1848,7 +1848,7 @@ function updateChatGreeting() {
   if (userProfile.cgpa) details.push('CGPA ' + userProfile.cgpa + '/10');
   if (userProfile.targetDegree) details.push(userProfile.targetDegree);
   if (userProfile.countries) details.push('targeting ' + userProfile.countries);
-  el.textContent = 'Hi ' + name + '! I\'m your AI Twin — powered by Claude AI. ' +
+  el.textContent = 'Hi ' + name + '! I\'m your AI Twin — powered by AI. ' +
     (details.length > 0 ? 'I know your full profile: ' + details.join(', ') + '. ' : '') +
     'Ask me anything about universities, SOPs, loans, visas, or scholarships!';
 }
