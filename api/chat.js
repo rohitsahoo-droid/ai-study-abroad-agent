@@ -25,7 +25,6 @@ export default async function handler(req, res) {
       for (let i = 0; i < messages.length; i++) {
         const msg = messages[i];
         let text = msg.content;
-        // Prepend system prompt into first user message
         if (i === 0 && msg.role === 'user' && systemPrompt) {
           text = systemPrompt + '\n\nUser: ' + text;
         }
@@ -35,7 +34,8 @@ export default async function handler(req, res) {
         });
       }
 
-      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+      // v1beta + gemini-2.5-flash = correct combination per Google docs
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
 
       const geminiResp = await fetch(url, {
         method: 'POST',
