@@ -34,7 +34,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // v1beta + gemini-2.5-flash = correct combination per Google docs
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
 
       const geminiResp = await fetch(url, {
@@ -42,7 +41,7 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
-          generationConfig: { maxOutputTokens: body.max_tokens || 500 }
+          generationConfig: { maxOutputTokens: body.max_tokens || 1500 }
         })
       });
 
@@ -68,7 +67,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: body.max_tokens || 500,
+          max_tokens: body.max_tokens || 1500,
           system: body.system,
           messages: body.messages,
         }),
