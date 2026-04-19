@@ -22,23 +22,28 @@ export default async function handler(req, res) {
       const messages = body.messages || [];
 
       const contents = [];
-      for (const msg of messages) {
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        let text = msg.content;
+        // Prepend system prompt into first user message
+        if (i === 0 && msg.role === 'user' && systemPrompt) {
+          text = systemPrompt + '\n\nUser: ' + text;
+        }
         contents.push({
           role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }]
+          parts: [{ text }]
         });
       }
 
-      const geminiBody = { contents, generationConfig: { maxOutputTokens: body.max_tokens || 500 } };
-      if (systemPrompt) geminiBody.system_instruction = { parts: [{ text: systemPrompt }] };
-
-      const model = 'gemini-1.5-flash';
-      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
       const geminiResp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiBody)
+        body: JSON.stringify({
+          contents,
+          generationConfig: { maxOutputTokens: body.max_tokens || 500 }
+        })
       });
 
       const geminiData = await geminiResp.json();
