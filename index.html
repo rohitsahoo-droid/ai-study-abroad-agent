@@ -1297,30 +1297,7 @@ async function openSOP(uniIdx) {
 function buildSOPPrompt(u) {
   var p = userProfile;
   var name = p.name || studentName || 'Student';
-  var exp = p.workExp || '0';
-  var expText = exp === '0' ? 'a fresh graduate with no full-time work experience' : exp + ' years of professional experience';
-  return 'Write a compelling, personalized Statement of Purpose (SOP) for ' + name + ' applying to ' + u.program + ' at ' + u.name + ' (globally ranked #' + u.rank + ').\n\n' +
-    'Student Profile:\n' +
-    '- Current Degree: ' + (p.currentDegree || 'B.Tech Computer Science') + '\n' +
-    '- CGPA: ' + (p.cgpa || '8.4') + '/10\n' +
-    '- 10th Grade: ' + (p.tenth || '91') + '%\n' +
-    '- 12th Grade: ' + (p.twelfth || '88') + '%\n' +
-    '- GRE: ' + (p.gre || '322') + (p.gmat ? ' | GMAT: ' + p.gmat : '') + '\n' +
-    '- TOEFL: ' + (p.toefl || '105') + (p.ielts ? ' | IELTS: ' + p.ielts : '') + '\n' +
-    '- Experience: ' + expText + '\n' +
-    '- Internship: ' + (p.internship || '3-6') + ' months\n' +
-    '- Research Papers: ' + (p.research || '0') + '\n' +
-    '- Active Backlogs: ' + (p.backlogs || '0') + '\n' +
-    '- City/State: ' + (p.city || 'Pune') + (p.state ? ', ' + p.state : '') + ', ' + (p.country || 'India') + '\n' +
-    '- Career Goal: Excelling in ' + (p.targetDegree || u.program) + ' and working in cutting-edge technology\n\n' +
-    'Write a 450–520 word SOP with:\n' +
-    '1. Compelling opening (passion and motivation)\n' +
-    '2. Academic background (mention CGPA, key coursework, projects)\n' +
-    '3. Professional/internship experience\n' +
-    '4. Why ' + u.name + ' specifically — mention the program\'s strengths, faculty, labs, or unique aspects\n' +
-    '5. Career goals (short and long term)\n' +
-    '6. Strong closing paragraph\n\n' +
-    'Rules: Write in first person. Make it personal and authentic. Do NOT use clichés like "since childhood" or "passion for technology." Mention specific aspects of ' + u.name + '\'s ' + u.program + ' program. Output ONLY the SOP text with no preamble, titles, or meta commentary.';
+  return 'Write a 450-word SOP for ' + name + ' applying to ' + u.program + ' at ' + u.name + '. Profile: CGPA ' + (p.cgpa||'8.4') + ', GRE ' + (p.gre||'322') + ', TOEFL ' + (p.toefl||'105') + ', ' + (p.workExp||'0') + 'yr exp, ' + (p.internship||'0') + ' months internship. Include: strong opening, academics, experience, why ' + u.name + ' specifically, career goals. First person. No clichés. Output SOP text only.';
 }
 
 function getFallbackSOP(u) {
@@ -1548,35 +1525,19 @@ function unlockVisa() {
 // ── AI Chat (Anthropic API) ────────────────────────────────────
 function buildSystemPrompt() {
   var p = userProfile;
-  return 'You are an expert AI Study Abroad advisor and personal coach named "AI Twin." You help students plan and execute their study abroad journey step by step.\n\n' +
-    'STUDENT PROFILE:\n' +
-    '- Name: ' + (p.name || studentName || 'Student') + '\n' +
-    '- Home Country: ' + (p.country || 'India') + ', ' + (p.state || '') + (p.city ? ', ' + p.city : '') + '\n' +
-    '- Current Degree: ' + (p.currentDegree || 'B.Tech Computer Science') + '\n' +
-    '- Target Degree: ' + (p.targetDegree || 'MS Computer Science') + '\n' +
-    '- GRE: ' + (p.gre || '322') + (p.gmat ? ' | GMAT: ' + p.gmat : '') + '\n' +
-    '- TOEFL: ' + (p.toefl || '105') + (p.ielts ? ' | IELTS: ' + p.ielts : '') + '\n' +
-    '- 10th: ' + (p.tenth || 'N/A') + '% | 12th: ' + (p.twelfth || 'N/A') + '%\n' +
-    '- UG CGPA: ' + (p.cgpa || '8.4') + '/10\n' +
-    '- Active Backlogs: ' + (p.backlogs || '0') + '\n' +
-    '- Work Experience: ' + (p.workExp || '0') + ' years\n' +
-    '- Internship: ' + (p.internship || '0') + ' months\n' +
-    '- Research Papers: ' + (p.research || '0') + '\n' +
-    '- Projects: ' + (p.projects || '2-3') + '\n' +
-    '- Target Countries: ' + (p.countries || 'USA, Canada') + '\n' +
-    '- Annual Budget: ' + (p.budget || '₹20-35L') + '\n' +
-    '- Target Intake: ' + (p.intake || 'Sep 2026') + '\n' +
-    '- Loan Amount Needed: ' + (p.loanAmount || '₹10L-₹20L') + '\n' +
-    '- Co-applicant: ' + (p.coApplicant || 'Parent') + '\n\n' +
-    'GUIDELINES:\n' +
-    '- Be friendly, concise (3-5 sentences max unless explaining something complex), and specific.\n' +
-    '- Give personalized advice based on their exact profile above.\n' +
-    '- For universities: recommend specific institutions considering their GRE/CGPA/backlogs. Flag if backlogs may be an issue.\n' +
-    '- For loans: use Indian context — mention HDFC Credila, SBI Global Ed-Vantage, Avanse, Axis Bank. Use ₹/lakhs.\n' +
-    '- For visa: be country-specific (F-1 for USA, Study Permit for Canada, etc.).\n' +
-    '- For scholarships: mention country-specific options (ORC, Vanier for Canada; TA/RA for USA; DAAD for Germany etc.)\n' +
-    '- Always end with one specific actionable next step or question.\n' +
-    '- Use Indian number system (lakh/crore) for money.';
+  var profile = [
+    (p.name || studentName || 'Student'),
+    (p.country || 'India'),
+    (p.currentDegree || 'B.Tech CS'),
+    'target:' + (p.targetDegree || 'MS CS'),
+    'CGPA:' + (p.cgpa || '8.4'),
+    'GRE:' + (p.gre || '322'),
+    'TOEFL:' + (p.toefl || '105'),
+    (p.countries || 'USA,Canada'),
+    (p.budget || 'Rs20-35L'),
+    (p.intake || 'Sep 2026')
+  ].join('|');
+  return 'You are AI Twin, a study abroad advisor for Indian students. Student profile: ' + profile + '. Give advice in 3-4 sentences. Be specific. Use lakhs for money. End with one actionable tip.';
 }
 
 
@@ -1634,7 +1595,7 @@ async function sendChat() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        max_tokens: 500,
         system: buildSystemPrompt(),
         messages: chatHistory
       })
