@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       };
       if (!geminiBody.system_instruction) delete geminiBody.system_instruction;
 
-      const model = 'gemini-2.0-flash';
+      const model = 'gemini-1.5-flash-latest';
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
 
       const geminiResp = await fetch(url, {
