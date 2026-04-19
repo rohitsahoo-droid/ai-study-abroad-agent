@@ -151,13 +151,6 @@ textarea{resize:vertical;min-height:80px}
 <!-- ═══════════════════════════════════════════════════════════
      SCREEN 2 — ONBOARDING
 ═══════════════════════════════════════════════════════════ -->
-<!-- ═══════════════════════════════════════════════════════════
-     SCREEN 1b — API KEY SETUP
-═══════════════════════════════════════════════════════════ -->
-
-    
-
-    
 
 <div id="screen-onboarding" class="screen">
   <div style="background:var(--card2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between">
@@ -1275,16 +1268,13 @@ async function openSOP(uniIdx) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'gemini-1.5-flash',
-max_tokens: 1000,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
         messages: [{ role: 'user', content: buildSOPPrompt(u) }]
       })
     });
     var data = await resp.json();
-   var sopText =
-data.candidates?.[0]?.content?.parts?.[0]?.text
-? data.candidates[0].content.parts[0].text
-: getFallbackSOP(u);
+    var sopText = parseAIResponse(data) || getFallbackSOP(u);
 
     document.getElementById('sop-generating').style.display = 'none';
     document.getElementById('sop-content').style.display = 'block';
@@ -1370,10 +1360,7 @@ async function regenerateSOP() {
       })
     });
     var data = await resp.json();
-    var sopText =
-data.candidates?.[0]?.content?.parts?.[0]?.text
-? data.candidates[0].content.parts[0].text
-: getFallbackSOP(u);
+    var sopText = parseAIResponse(data) || getFallbackSOP(u);
     document.getElementById('sop-generating').style.display = 'none';
     document.getElementById('sop-content').style.display = 'block';
     document.getElementById('sop-text').textContent = sopText;
@@ -1592,6 +1579,26 @@ function buildSystemPrompt() {
     '- Use Indian number system (lakh/crore) for money.';
 }
 
+
+// ── AI Response Parser (works for both Anthropic + Gemini proxy) ──
+function parseAIResponse(data) {
+  if (!data) return null;
+  // Standard shape: {content: [{text: "..."}]}
+  if (data.content && data.content[0] && data.content[0].text) {
+    return data.content[0].text;
+  }
+  // Gemini direct shape (if ever called directly)
+  if (data.candidates && data.candidates[0]) {
+    var parts = data.candidates[0].content && data.candidates[0].content.parts;
+    if (parts && parts[0] && parts[0].text) return parts[0].text;
+  }
+  // Error shape
+  if (data.error && data.error.message) {
+    return '⚠️ ' + data.error.message;
+  }
+  return null;
+}
+
 async function sendChat() {
   if (isChatLoading) return;
   var input = document.getElementById('chat-input');
@@ -1633,14 +1640,7 @@ async function sendChat() {
       })
     });
     var data = await resp.json();
-    var aiText = '';
-    if (data.content && data.content[0] && data.content[0].text) {
-      aiText = data.content[0].text;
-    } else if (data.error) {
-      aiText = '⚠️ Error: ' + (data.error.message || 'Something went wrong. Please try again.');
-    } else {
-      aiText = '⚠️ Unexpected response from AI. Please try again.';
-    }
+    var aiText = parseAIResponse(data) || '⚠️ Could not get a response. Please try again.';
     chatHistory.push({ role: 'assistant', content: aiText });
 
     // Type into bubble
