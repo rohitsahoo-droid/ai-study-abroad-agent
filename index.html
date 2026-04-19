@@ -1275,8 +1275,8 @@ async function openSOP(uniIdx) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'gemini-1.5-flash'
-        max_tokens: 1000,
+        model: 'gemini-1.5-flash',
+max_tokens: 1000,
         messages: [{ role: 'user', content: buildSOPPrompt(u) }]
       })
     });
